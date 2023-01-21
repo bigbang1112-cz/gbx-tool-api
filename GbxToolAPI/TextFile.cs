@@ -8,4 +8,9 @@ public class TextFile
     {
         Text = text;
     }
+    
+    public static explicit operator string(TextFile textFile)
+    {
+        return textFile.Text;
+    }
 }

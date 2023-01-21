@@ -8,4 +8,9 @@ public class BinFile
     {
         Data = data;
     }
+    
+    public static explicit operator byte[](BinFile binFile)
+    {
+        return binFile.Data;
+    }
 }
