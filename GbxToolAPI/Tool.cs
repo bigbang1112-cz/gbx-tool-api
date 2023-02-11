@@ -1,10 +1,8 @@
 ﻿namespace GbxToolAPI;
 
-public abstract class Tool<TConfig> : Config
+public abstract class Tool
 {
     // has to have parameterless constructor
-
-    public abstract TConfig Config { get; set; }
 
     static Tool()
     {
