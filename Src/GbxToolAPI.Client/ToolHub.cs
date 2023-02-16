@@ -17,6 +17,11 @@ public abstract class ToolHub : IAsyncDisposable
     {
         this.logger = logger;
 
+        if (!baseAddress.EndsWith('/'))
+        {
+            baseAddress += '/';
+        }
+
         var type = GetType();
         var hubAddress = baseAddress + type.Name.ToLower();
 

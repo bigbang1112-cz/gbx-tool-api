@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GbxToolAPI.Client\GbxToolAPI.Client.csproj" />
+    <ProjectReference Include="..\..\Src\GbxToolAPI.Server\GbxToolAPI.Server.csproj" />
   </ItemGroup>
 
 </Project>

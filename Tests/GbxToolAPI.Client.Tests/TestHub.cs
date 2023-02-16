@@ -10,6 +10,6 @@ internal class TestHub : ToolHub
 
     public TestHub(string baseAddress, ILogger<TestHub>? logger = null) : base(baseAddress, logger)
     {
-
+        Connection.
     }
 }
