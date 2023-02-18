@@ -4,8 +4,8 @@ using Microsoft.Extensions.Logging;
 
 namespace GbxToolAPI.Client;
 
-public abstract class ToolHub : IAsyncDisposable
-{
+public abstract class ToolHubConnection : IAsyncDisposable
+{    
     private readonly ILogger? logger;
 
     protected HubConnection Connection { get; }
@@ -14,7 +14,7 @@ public abstract class ToolHub : IAsyncDisposable
     public string? ConnectionId => Connection.ConnectionId;
     public HubConnectionState State => Connection.State;
 
-	public ToolHub(string baseAddress, ILogger? logger = null)
+	public ToolHubConnection(string baseAddress, ILogger? logger = null)
     {
         this.logger = logger;
 
@@ -24,7 +24,15 @@ public abstract class ToolHub : IAsyncDisposable
         }
 
         var type = GetType();
-        var hubAddress = baseAddress + type.Name.ToLower();
+
+        var hubName = type.Name.ToLower();
+
+        if (hubName.EndsWith("Connection", StringComparison.OrdinalIgnoreCase))
+        {
+            hubName = hubName[..^10];
+        }
+
+        var hubAddress = baseAddress + hubName;
 
         Connection = new HubConnectionBuilder()
             .WithUrl(hubAddress)
