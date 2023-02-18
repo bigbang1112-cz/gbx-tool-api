@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace GbxToolAPI.Client;
 
 public abstract class ToolHub : IAsyncDisposable
 {
-    private readonly ILogger<ToolHub>? logger;
+    private readonly ILogger? logger;
 
     protected HubConnection Connection { get; }
 
@@ -13,7 +14,7 @@ public abstract class ToolHub : IAsyncDisposable
     public string? ConnectionId => Connection.ConnectionId;
     public HubConnectionState State => Connection.State;
 
-	public ToolHub(string baseAddress, ILogger<ToolHub>? logger = null)
+	public ToolHub(string baseAddress, ILogger? logger = null)
     {
         this.logger = logger;
 
@@ -28,6 +29,7 @@ public abstract class ToolHub : IAsyncDisposable
         Connection = new HubConnectionBuilder()
             .WithUrl(hubAddress)
             .WithAutomaticReconnect()
+            .AddMessagePackProtocol()
             .Build();
     }
 
