@@ -2,5 +2,5 @@
 
 public interface IConfigurable<TConfig> where TConfig : Config
 {
-    public abstract TConfig Config { get; set; }
+    TConfig Config { get; set; }
 }
