@@ -4,5 +4,6 @@ namespace GbxToolAPI.Server;
 
 public interface IServer
 {
-    void Services(IServiceCollection services);
+    string ConnectionString { get; }
+    static abstract void Services(IServiceCollection services);
 }
