@@ -11,54 +11,64 @@ public class ToolConsole<T> where T : ITool
         var console = new ToolConsole<T>();
 
         var configProps = GetConfigProps();
-        var potentialCtors = typeof(T).GetConstructors().ToList();
-        var paramDict = new Dictionary<ParameterInfo, object>();
 
-        var filesChecked = false;
+        var inputFiles = args.TakeWhile(arg => !arg.StartsWith("-")).ToArray();
+        var ctorArgs = inputFiles.Select(file => GameBox.ParseNode(file) ?? throw new Exception()).ToArray();
+        var remainingArgs = args.Skip(inputFiles.Length).ToArray();
 
-        foreach (var arg in args)
+        var toolCtor = GetSuitableConstructor(ctorArgs);
+
+        if (toolCtor != null)
         {
-            if (!filesChecked)
-            {
-                var node = GameBox.ParseNode(arg) ?? throw new Exception();
-                var nodeType = node.GetType();
+            var tool = toolCtor.Invoke(ctorArgs);
+            // use the tool object as needed
+        }
 
-                var updatedPotentialCtors = new List<ConstructorInfo>();
-
-                foreach (var ctor in potentialCtors)
-                {
-                    foreach (var p in ctor.GetParameters())
-                    {
-                        if (p.ParameterType.IsGenericType && p.ParameterType.IsAssignableTo(typeof(IEnumerable)))
-                        {
-                            var enumerableType = p.ParameterType.GetGenericArguments()[0];
-
-                            if (enumerableType.IsAssignableTo(nodeType))
-                            {
-                                updatedPotentialCtors.Add(ctor);
-                                paramDict[p] = new[] { node };
-                            }
-                        }
-                        else if (p.ParameterType.IsAssignableTo(nodeType))
-                        {
-                            updatedPotentialCtors.Add(ctor);
-                            paramDict[p] = node;
-                        }
-                    }
-                }
-
-                potentialCtors = updatedPotentialCtors;
-            }
-
+        foreach (var arg in remainingArgs)
+        {
             var argLower = arg.ToLowerInvariant();
 
             if (configProps.TryGetValue(argLower, out var confProp))
             {
-                filesChecked = true;
+
             }
         }
 
         return Task.FromResult(console);
+    }
+
+    private static ConstructorInfo? GetSuitableConstructor(Node[] ctorArgs)
+    {
+        foreach (var constructor in typeof(T).GetConstructors())
+        {
+            var parameters = constructor.GetParameters();
+
+            if (parameters.Length != ctorArgs.Length) // Does not work well on enumerables
+            {
+                continue;
+            }
+
+            var isMatch = true;
+
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                var expectedType = parameters[i].ParameterType;
+                var actualType = ctorArgs[i].GetType();
+
+                if (!expectedType.IsAssignableFrom(actualType))
+                {
+                    isMatch = false;
+                    break;
+                }
+            }
+
+            if (isMatch)
+            {
+                return constructor;
+            }
+        }
+
+        return null;
     }
 
     private static Dictionary<string, PropertyInfo> GetConfigProps()
