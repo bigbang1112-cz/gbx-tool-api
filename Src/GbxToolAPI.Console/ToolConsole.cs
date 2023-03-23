@@ -12,8 +12,8 @@ public class ToolConsole<T> where T : ITool
 
         var configProps = GetConfigProps();
 
-        var inputFiles = args.TakeWhile(arg => !arg.StartsWith("-")).ToArray();
-        var ctorArgs = inputFiles.Select(file => GameBox.ParseNode(file) ?? throw new Exception()).ToArray();
+        var inputFiles = args.TakeWhile(arg => !arg.StartsWith('-')).ToArray();
+        var ctorArgs = inputFiles.Select(GetNodeFromFileName).ToArray();
         var remainingArgs = args.Skip(inputFiles.Length).ToArray();
 
         var toolCtor = GetSuitableConstructor(ctorArgs);
@@ -37,11 +37,19 @@ public class ToolConsole<T> where T : ITool
         return Task.FromResult(console);
     }
 
+    private static Node GetNodeFromFileName(string fileName)
+    {
+        return GameBox.ParseNode(fileName) ?? throw new Exception();
+    }
+
     private static ConstructorInfo? GetSuitableConstructor(Node[] ctorArgs)
     {
+        var nodeLookup = ctorArgs.ToLookup(x => x.GetType());
+
         foreach (var constructor in typeof(T).GetConstructors())
         {
             var parameters = constructor.GetParameters();
+            var paramLookup = parameters.ToLookup(p => p.ParameterType);
 
             if (parameters.Length != ctorArgs.Length) // Does not work well on enumerables
             {
