@@ -13,25 +13,37 @@ public class ToolConsole<T> where T : ITool
         var configProps = GetConfigProps();
 
         var inputFiles = args.TakeWhile(arg => !arg.StartsWith('-')).ToArray();
-        var ctorArgs = inputFiles.Select(GetNodeFromFileName).ToArray();
-        var remainingArgs = args.Skip(inputFiles.Length).ToArray();
+        var ctorArgs = inputFiles.Select(GetNodeFromFileName).ToArray(); // Otherwise the nodes will be repeately parsed
+        var remainingArgs = args.Skip(inputFiles.Length);
 
-        var toolCtor = GetSuitableConstructor(ctorArgs);
-
-        if (toolCtor != null)
-        {
-            var tool = toolCtor.Invoke(ctorArgs);
-            // use the tool object as needed
-        }
+        var once = false;
 
         foreach (var arg in remainingArgs)
         {
             var argLower = arg.ToLowerInvariant();
 
+            switch (argLower)
+            {
+                case "-once":
+                    once = true;
+                    break;
+            }
+
             if (configProps.TryGetValue(argLower, out var confProp))
             {
 
             }
+        }
+
+
+        if (once)
+        {
+            var (ctor, parameterValues) = GetSuitableCtorParamsToRunOnce(ctorArgs);
+            var tool = (T)ctor.Invoke(parameterValues.ToArray());
+        }
+        else
+        {
+
         }
 
         return Task.FromResult(console);
@@ -42,41 +54,95 @@ public class ToolConsole<T> where T : ITool
         return GameBox.ParseNode(fileName) ?? throw new Exception();
     }
 
-    private static ConstructorInfo? GetSuitableConstructor(Node[] ctorArgs)
+    private static (ConstructorInfo, IEnumerable<object>) GetSuitableCtorParamsToRunOnce(Node[] ctorArgs)
     {
-        var nodeLookup = ctorArgs.ToLookup(x => x.GetType());
-
         foreach (var constructor in typeof(T).GetConstructors())
         {
             var parameters = constructor.GetParameters();
-            var paramLookup = parameters.ToLookup(p => p.ParameterType);
+            var nodeQueueDict = CreateNodeQueueByNodeType(ctorArgs);
+            var ctorParamValues = new List<object>();
 
-            if (parameters.Length != ctorArgs.Length) // Does not work well on enumerables
+            var invalidCtor = false;
+
+            foreach (var param in parameters)
+            {
+                var type = param.ParameterType;
+
+                if (type.IsAssignableTo(typeof(IEnumerable)) && type.IsGenericType)
+                {
+                    var elementType = type.GetGenericArguments()[0];
+                    var queueForEnumerable = nodeQueueDict[elementType];
+
+                    var listType = typeof(List<>).MakeGenericType(elementType);
+
+                    var nodes = (IList)Activator.CreateInstance(listType)!;
+
+                    while (queueForEnumerable.Count > 0)
+                    {
+                        nodes.Add(queueForEnumerable.Dequeue());
+                    }
+
+                    ctorParamValues.Add(nodes);
+
+                    continue;
+                }
+
+                var queue = nodeQueueDict[type];
+
+                if (queue.Count == 0)
+                {
+                    invalidCtor = true;
+                    break;
+                }
+
+                var node = queue.Dequeue();
+
+                ctorParamValues.Add(node);
+            }
+
+            if (parameters.Length != ctorParamValues.Count)
             {
                 continue;
             }
 
-            var isMatch = true;
-
-            for (int i = 0; i < parameters.Length; i++)
+            foreach (var queue in nodeQueueDict)
             {
-                var expectedType = parameters[i].ParameterType;
-                var actualType = ctorArgs[i].GetType();
-
-                if (!expectedType.IsAssignableFrom(actualType))
+                if (queue.Value.Count > 0)
                 {
-                    isMatch = false;
+                    invalidCtor = true;
                     break;
                 }
             }
 
-            if (isMatch)
+            if (invalidCtor)
             {
-                return constructor;
+                continue;
             }
+
+            return (constructor, ctorParamValues);
         }
 
-        return null;
+        throw new Exception("No suitable constructor found");
+    }
+
+    private static Dictionary<Type, Queue<Node>> CreateNodeQueueByNodeType(Node[] ctorArgs)
+    {
+        var nodeQueueDict = new Dictionary<Type, Queue<Node>>();
+
+        foreach (var ctorArg in ctorArgs)
+        {
+            var type = ctorArg.GetType();
+
+            if (!nodeQueueDict.TryGetValue(type, out var queue))
+            {
+                queue = new Queue<Node>();
+                nodeQueueDict.Add(type, queue);
+            }
+
+            queue.Enqueue(ctorArg);
+        }
+
+        return nodeQueueDict;
     }
 
     private static Dictionary<string, PropertyInfo> GetConfigProps()
