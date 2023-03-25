@@ -1,14 +1,7 @@
 ﻿namespace GbxToolAPI;
 
-public class TextFile
-{
-    public string Text { get; }
-
-    public TextFile(string text)
-    {
-        Text = text;
-    }
-    
+public record TextFile(string Text, string? FileName = null)
+{    
     public static explicit operator string(TextFile textFile)
     {
         return textFile.Text;
