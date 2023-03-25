@@ -4,19 +4,29 @@ using System.Reflection;
 
 namespace GbxToolAPI.Console;
 
-public class ToolConsole<T> where T : ITool
+public class ToolConsole<T> where T : class, ITool
 {
     public static Task<ToolConsole<T>> CreateAsync(string[] args)
     {
+        var type = typeof(T);
+
+        var outputInterfaces = type.GetInterfaces()
+            .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IHasOutput<>))
+            .ToList();
+
+        if (!outputInterfaces.Any())
+        {
+            throw new Exception("Tool must implement at least one IHasOutput<T> interface.");
+        }
+
         var console = new ToolConsole<T>();
 
         var configProps = GetConfigProps();
 
         var inputFiles = args.TakeWhile(arg => !arg.StartsWith('-')).ToArray();
-        var ctorArgs = inputFiles.Select(GetNodeFromFileName).ToArray(); // Otherwise the nodes will be repeately parsed
         var remainingArgs = args.Skip(inputFiles.Length);
 
-        var once = false;
+        var singleOutput = false;
 
         foreach (var arg in remainingArgs)
         {
@@ -24,8 +34,8 @@ public class ToolConsole<T> where T : ITool
 
             switch (argLower)
             {
-                case "-once":
-                    once = true;
+                case "-singleoutput": // Merge will produce only one instance of Tool
+                    singleOutput = true;
                     break;
             }
 
@@ -35,114 +45,23 @@ public class ToolConsole<T> where T : ITool
             }
         }
 
-
-        if (once)
+        foreach (var toolInstance in ToolConstructorPicker.CreateInstances<T>(inputFiles))
         {
-            var (ctor, parameterValues) = GetSuitableCtorParamsToRunOnce(ctorArgs);
-            var tool = (T)ctor.Invoke(parameterValues.ToArray());
-        }
-        else
-        {
-
-        }
-
-        return Task.FromResult(console);
-    }
-
-    private static Node GetNodeFromFileName(string fileName)
-    {
-        return GameBox.ParseNode(fileName) ?? throw new Exception();
-    }
-
-    private static (ConstructorInfo, IEnumerable<object>) GetSuitableCtorParamsToRunOnce(Node[] ctorArgs)
-    {
-        foreach (var constructor in typeof(T).GetConstructors())
-        {
-            var parameters = constructor.GetParameters();
-            var nodeQueueDict = CreateNodeQueueByNodeType(ctorArgs);
-            var ctorParamValues = new List<object>();
-
-            var invalidCtor = false;
-
-            foreach (var param in parameters)
+            foreach (var produceMethod in type.GetMethods().Where(m => m.Name == nameof(IHasOutput<object>.Produce)))
             {
-                var type = param.ParameterType;
-
-                if (type.IsAssignableTo(typeof(IEnumerable)) && type.IsGenericType)
+                var output = produceMethod.Invoke(toolInstance, null);
+                
+                if (output is null)
                 {
-                    var elementType = type.GetGenericArguments()[0];
-                    var queueForEnumerable = nodeQueueDict[elementType];
-
-                    var listType = typeof(List<>).MakeGenericType(elementType);
-
-                    var nodes = (IList)Activator.CreateInstance(listType)!;
-
-                    while (queueForEnumerable.Count > 0)
-                    {
-                        nodes.Add(queueForEnumerable.Dequeue());
-                    }
-
-                    ctorParamValues.Add(nodes);
-
                     continue;
                 }
 
-                var queue = nodeQueueDict[type];
-
-                if (queue.Count == 0)
-                {
-                    invalidCtor = true;
-                    break;
-                }
-
-                var node = queue.Dequeue();
-
-                ctorParamValues.Add(node);
-            }
-
-            if (parameters.Length != ctorParamValues.Count)
-            {
-                continue;
-            }
-
-            foreach (var queue in nodeQueueDict)
-            {
-                if (queue.Value.Count > 0)
-                {
-                    invalidCtor = true;
-                    break;
-                }
-            }
-
-            if (invalidCtor)
-            {
-                continue;
-            }
-
-            return (constructor, ctorParamValues);
+                var outputSaver = new OutputSaver(output);
+                outputSaver.Save();
+            }            
         }
 
-        throw new Exception("No suitable constructor found");
-    }
-
-    private static Dictionary<Type, Queue<Node>> CreateNodeQueueByNodeType(Node[] ctorArgs)
-    {
-        var nodeQueueDict = new Dictionary<Type, Queue<Node>>();
-
-        foreach (var ctorArg in ctorArgs)
-        {
-            var type = ctorArg.GetType();
-
-            if (!nodeQueueDict.TryGetValue(type, out var queue))
-            {
-                queue = new Queue<Node>();
-                nodeQueueDict.Add(type, queue);
-            }
-
-            queue.Enqueue(ctorArg);
-        }
-
-        return nodeQueueDict;
+        return Task.FromResult(console);
     }
 
     private static Dictionary<string, PropertyInfo> GetConfigProps()
