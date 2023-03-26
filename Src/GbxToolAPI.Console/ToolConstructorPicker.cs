@@ -5,7 +5,7 @@ namespace GbxToolAPI.Console;
 
 static class ToolConstructorPicker
 {
-    internal static IEnumerable<T> CreateInstances<T>(string[] files) where T : class, ITool
+    internal static IEnumerable<T> CreateInstances<T>(string[] files, bool singleOutput) where T : class, ITool
     {
         var inputByType = CreateInputDictionaryFromFiles(files);
         
@@ -22,6 +22,26 @@ static class ToolConstructorPicker
             {
                 var param = ctorParams[i];
                 
+                if (singleOutput && param.ParameterType.IsGenericType && param.ParameterType.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                {
+                    var elementType = param.ParameterType.GetGenericArguments()[0];
+
+                    if (!inputByType.TryGetValue(elementType, out var coll))
+                    {
+                        invalidCtor = true;
+                        break;
+                    }
+
+                    if (coll.Count > 1)
+                    {
+                        var castMethod = typeof(Enumerable).GetMethod("Cast")!.MakeGenericMethod(elementType);
+
+                        ctorParamValuesToServe[i] = castMethod.Invoke(null, new object[] { coll })!;
+
+                        continue;
+                    }
+                }
+                
                 if (!inputByType.TryGetValue(param.ParameterType, out var inputList))
                 {
                     invalidCtor = true;
@@ -36,6 +56,13 @@ static class ToolConstructorPicker
                         ctorParamValuesToServe[i] = inputList.First();
                         break;
                     default:
+
+                        if (singleOutput)
+                        {
+                            invalidCtor = true;
+                            break;
+                        }
+
                         if (bulkParamIndex is not null)
                         {
                             throw new Exception("Bulk input is supported with only one type of input.");

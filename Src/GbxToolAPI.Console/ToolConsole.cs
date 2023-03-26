@@ -45,7 +45,7 @@ public class ToolConsole<T> where T : class, ITool
             }
         }
 
-        foreach (var toolInstance in ToolConstructorPicker.CreateInstances<T>(inputFiles))
+        foreach (var toolInstance in ToolConstructorPicker.CreateInstances<T>(inputFiles, singleOutput))
         {
             foreach (var produceMethod in type.GetMethods().Where(m => m.Name == nameof(IHasOutput<object>.Produce)))
             {
