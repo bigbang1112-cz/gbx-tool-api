@@ -1,4 +1,5 @@
 ﻿using GBX.NET;
+using System;
 using System.Text;
 
 namespace GbxToolAPI.Console;
@@ -122,10 +123,24 @@ static class ToolConstructorPicker
                 continue;
             }
 
-            var node = GameBox.ParseNode(file);
+            System.Console.WriteLine("Parsing " + Path.GetFileName(file) + "...");
 
+            Node? node;
+
+            try
+            {
+                node = GameBox.ParseNode(file);
+            }
+            catch (Exception ex)
+            {
+                System.Console.WriteLine(ex);
+                continue;
+            }
+            
             yield return node is null ? new BinFile(File.ReadAllBytes(file)) : node;
         }
+        
+        System.Console.WriteLine();
     }
 
     public static bool IsTextFile(string filePath)

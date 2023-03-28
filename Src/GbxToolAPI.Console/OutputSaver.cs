@@ -1,4 +1,5 @@
 ﻿using GBX.NET;
+using System.Diagnostics;
 
 namespace GbxToolAPI.Console;
 
@@ -76,7 +77,13 @@ internal class OutputSaver
             fileName = GenerateNodeFileName(node);
         }
 
+        System.Console.WriteLine($"Saving as {fileName}...");
+        
+        var watch = Stopwatch.StartNew();
+
         node.Save(fileName);
+
+        System.Console.WriteLine($"Saved. ({watch.Elapsed.TotalMilliseconds}ms)");
     }
 
     private static string GenerateNodeFileName(Node node)
