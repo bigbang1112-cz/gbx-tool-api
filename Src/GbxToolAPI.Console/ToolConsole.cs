@@ -93,7 +93,7 @@ public class ToolConsole<T> where T : class, ITool
 
         if (configPropTypes.Count > 0)
         {
-            Directory.CreateDirectory((rootPath is null ? "" : rootPath + Path.DirectorySeparatorChar) + "Config");
+            Directory.CreateDirectory(DefineRootPath(rootPath) + "Config");
 
             customConfig ??= "Default";
 
@@ -101,7 +101,7 @@ public class ToolConsole<T> where T : class, ITool
             {
                 var configType = configProp.PropertyType;
 
-                var fileName = (rootPath is null ? "" : rootPath + Path.DirectorySeparatorChar) + Path.Combine("Config", $"{customConfig}{(configPropTypes.Count > 1 ? $"_{configType.Name}" : "")}.yml");
+                var fileName = DefineRootPath(rootPath) + Path.Combine("Config", $"{customConfig}{(configPropTypes.Count > 1 ? $"_{configType.Name}" : "")}.yml");
 
                 Config? config;
 
@@ -163,7 +163,7 @@ public class ToolConsole<T> where T : class, ITool
                     continue;
                 }
 
-                var outputSaver = new OutputSaver(output);
+                var outputSaver = new OutputSaver(output, DefineRootPath(rootPath));
                 outputSaver.Save();
             }
 
@@ -173,6 +173,11 @@ public class ToolConsole<T> where T : class, ITool
         System.Console.WriteLine("Complete!");
 
         return Task.FromResult(console);
+    }
+
+    private static string DefineRootPath(string? rootPath)
+    {
+        return (rootPath is null ? "" : rootPath + Path.DirectorySeparatorChar);
     }
 
     private static string GetTypeName(Type type)
