@@ -1,5 +1,4 @@
 ﻿using GbxToolAPI.Console.Converters.Yml;
-using System.ComponentModel;
 using YamlDotNet.Serialization;
 
 namespace GbxToolAPI.Console;
@@ -13,6 +12,7 @@ internal static class Yml
         new Vec2Converter(),
         new Vec3Converter(),
         new Vec4Converter(),
+        new CultureInfoConverter()
     };
 
     public static ISerializer Serializer { get; } = CreateSerializerBuilder().Build();
