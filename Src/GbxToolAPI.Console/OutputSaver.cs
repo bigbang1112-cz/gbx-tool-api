@@ -6,13 +6,13 @@ namespace GbxToolAPI.Console;
 internal class OutputSaver
 {
     private readonly object output;
-    private readonly string rootPath;
+    private readonly string outputPath;
     private readonly Type outputType;
 
-    public OutputSaver(object output, string rootPath)
+    public OutputSaver(object output, string outputPath)
     {
         this.output = output;
-        this.rootPath = rootPath;
+        this.outputPath = outputPath;
         outputType = output.GetType();
     }
 
@@ -82,7 +82,7 @@ internal class OutputSaver
         
         var watch = Stopwatch.StartNew();
 
-        node.Save(Path.Combine(rootPath, fileName));
+        node.Save(Path.Combine(outputPath, fileName));
 
         System.Console.WriteLine($"Saved. ({watch.Elapsed.TotalMilliseconds}ms)");
     }

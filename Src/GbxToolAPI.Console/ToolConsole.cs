@@ -81,7 +81,7 @@ public class ToolConsole<T> where T : class, ITool
 
         foreach (var toolInstance in ToolConstructorPicker.CreateInstances<T>(inputFiles, consoleOptions.SingleOutput))
         {
-            RunToolInstance(toolInstance, configInstances, configPropsToSet);
+            RunToolInstance(toolInstance, configInstances, configPropsToSet, consoleOptions.OutputDir ?? rootPath);
 
             System.Console.WriteLine();
         }
@@ -91,7 +91,7 @@ public class ToolConsole<T> where T : class, ITool
         return Task.FromResult(console);
     }
 
-    private static void RunToolInstance(T toolInstance, Dictionary<PropertyInfo, Config> configInstances, Dictionary<PropertyInfo, object?> configPropsToSet)
+    private static void RunToolInstance(T toolInstance, Dictionary<PropertyInfo, Config> configInstances, Dictionary<PropertyInfo, object?> configPropsToSet, string outputDir)
     {
         System.Console.WriteLine("Running tool instance...");
 
@@ -131,7 +131,7 @@ public class ToolConsole<T> where T : class, ITool
                 continue;
             }
 
-            var outputSaver = new OutputSaver(output, rootPath);
+            var outputSaver = new OutputSaver(output, outputDir);
             outputSaver.Save();
         }
     }
@@ -203,6 +203,22 @@ public class ToolConsole<T> where T : class, ITool
                     }
 
                     options.CustomConfig = argEnumerator.Current;
+                    continue;
+                case "-o":
+                case "-output":
+                    if (!argEnumerator.MoveNext())
+                    {
+                        throw new ConsoleFailException("Missing string value for option " + arg);
+                    }
+
+                    var outputDir = argEnumerator.Current;
+
+                    if (!Directory.Exists(outputDir))
+                    {
+                        throw new ConsoleFailException("Output directory does not exist: " + outputDir);
+                    }
+
+                    options.OutputDir = outputDir;
                     continue;
             }
 
