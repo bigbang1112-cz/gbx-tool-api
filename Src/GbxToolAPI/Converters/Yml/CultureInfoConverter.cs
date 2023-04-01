@@ -3,7 +3,7 @@ using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 using System.Globalization;
 
-namespace GbxToolAPI.Console.Converters.Yml;
+namespace GbxToolAPI.Converters.Yml;
 
 internal class CultureInfoConverter : IYamlTypeConverter
 {
@@ -23,7 +23,7 @@ internal class CultureInfoConverter : IYamlTypeConverter
         }
 
         var val = (CultureInfo)value!;
-        
+
         emitter.Emit(new Scalar(val.Name));
     }
 }

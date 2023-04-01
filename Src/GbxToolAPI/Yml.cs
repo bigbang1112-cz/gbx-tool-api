@@ -1,9 +1,9 @@
-﻿using GbxToolAPI.Console.Converters.Yml;
+﻿using GbxToolAPI.Converters.Yml;
 using YamlDotNet.Serialization;
 
-namespace GbxToolAPI.Console;
+namespace GbxToolAPI;
 
-internal static class Yml
+public static class Yml
 {
     public static IReadOnlyCollection<IYamlTypeConverter> TypeConverters { get; } = new List<IYamlTypeConverter>
     {

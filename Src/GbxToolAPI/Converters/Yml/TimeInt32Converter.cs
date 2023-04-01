@@ -1,10 +1,9 @@
-﻿using System.Globalization;
-using TmEssentials;
+﻿using TmEssentials;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
 
-namespace GbxToolAPI.Console.Converters.Yml;
+namespace GbxToolAPI.Converters.Yml;
 
 public sealed class TimeInt32Converter : IYamlTypeConverter
 {

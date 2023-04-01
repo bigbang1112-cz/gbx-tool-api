@@ -4,7 +4,7 @@ using YamlDotNet.Serialization;
 using GBX.NET;
 using System.Globalization;
 
-namespace GbxToolAPI.Console.Converters.Yml;
+namespace GbxToolAPI.Converters.Yml;
 
 internal class Vec2Converter : IYamlTypeConverter
 {
@@ -13,7 +13,7 @@ internal class Vec2Converter : IYamlTypeConverter
     public object? ReadYaml(IParser parser, Type type)
     {
         _ = parser.Consume<SequenceStart>();
-        
+
         var x = float.Parse(parser.Consume<Scalar>().Value, CultureInfo.InvariantCulture);
         var y = float.Parse(parser.Consume<Scalar>().Value, CultureInfo.InvariantCulture);
 
