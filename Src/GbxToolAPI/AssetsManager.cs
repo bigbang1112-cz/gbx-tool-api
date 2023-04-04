@@ -15,7 +15,12 @@ public static class AssetsManager<TTool> where TTool : ITool
         {
             throw new NotSupportedException("This method is only supported when running via GbxToolAPI.Console");
         }
+        
+        return GetFromYmlOnDisk<T>(path, entryAss);
+    }
 
+    private static T GetFromYmlOnDisk<T>(string path, Assembly? entryAss)
+    {
         var rootPath = entryAss?.Location is null ? "" : Path.GetDirectoryName(entryAss.Location) ?? "";
 
         var toolAssetsIdentifier = typeof(TTool).GetCustomAttribute<ToolAssetsAttribute>()?.Identifier;
@@ -24,8 +29,9 @@ public static class AssetsManager<TTool> where TTool : ITool
         {
             throw new NotSupportedException($"Assets are not supported for {typeof(TTool).Name}");
         }
-
+        
         using var r = File.OpenText(Path.Combine(rootPath, "Assets", "Tools", toolAssetsIdentifier, path));
+        
         return Yml.Deserializer.Deserialize<T>(r);
     }
 }
