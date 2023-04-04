@@ -1,9 +1,12 @@
 ﻿using System.Reflection;
+using System.Text;
 
 namespace GbxToolAPI;
 
 public static class AssetsManager<TTool> where TTool : ITool
 {
+    private static Func<string, byte[]>? ExternalRetrieve { get; set; }
+
     public static T GetFromYml<T>(string path)
     {
         var entryAss = Assembly.GetEntryAssembly();
@@ -13,14 +16,17 @@ public static class AssetsManager<TTool> where TTool : ITool
 
         if (!runsViaConsole)
         {
-            throw new NotSupportedException("This method is only supported when running via GbxToolAPI.Console");
-        }
-        
-        return GetFromYmlOnDisk<T>(path, entryAss);
-    }
+            if (ExternalRetrieve is null)
+            {
+                throw new Exception("ExternalRetrieve needs to be set.");
+            }
 
-    private static T GetFromYmlOnDisk<T>(string path, Assembly? entryAss)
-    {
+            var data = ExternalRetrieve(path);
+            var str = Encoding.UTF8.GetString(data);
+
+            return Yml.Deserializer.Deserialize<T>(str);
+        }
+
         var rootPath = entryAss?.Location is null ? "" : Path.GetDirectoryName(entryAss.Location) ?? "";
 
         var toolAssetsIdentifier = typeof(TTool).GetCustomAttribute<ToolAssetsAttribute>()?.Identifier;
@@ -29,9 +35,8 @@ public static class AssetsManager<TTool> where TTool : ITool
         {
             throw new NotSupportedException($"Assets are not supported for {typeof(TTool).Name}");
         }
-        
+
         using var r = File.OpenText(Path.Combine(rootPath, "Assets", "Tools", toolAssetsIdentifier, path));
-        
         return Yml.Deserializer.Deserialize<T>(r);
     }
 }
