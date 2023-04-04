@@ -5,9 +5,9 @@ namespace GbxToolAPI;
 
 public static class AssetsManager<TTool> where TTool : ITool
 {
-    private static Func<string, byte[]>? ExternalRetrieve { get; set; }
+    private static Func<string, Task<byte[]>>? ExternalRetrieve { get; set; }
 
-    public static T GetFromYml<T>(string path)
+    public static async ValueTask<T> GetFromYmlAsync<T>(string path)
     {
         var entryAss = Assembly.GetEntryAssembly();
 
@@ -21,7 +21,7 @@ public static class AssetsManager<TTool> where TTool : ITool
                 throw new Exception("ExternalRetrieve needs to be set.");
             }
 
-            var data = ExternalRetrieve(path);
+            var data = await ExternalRetrieve(path);
             var str = Encoding.UTF8.GetString(data);
 
             return Yml.Deserializer.Deserialize<T>(str);
