@@ -112,6 +112,11 @@ public class ToolConsole<T> where T : class, ITool
             }
         }
 
+        if (toolInstance is IHasAssets toolWithAssets)
+        {
+            toolWithAssets.LoadAssetsAsync().GetAwaiter().GetResult();
+        }
+
         foreach (var produceMethod in typeof(T).GetMethods().Where(m => m.Name == nameof(IHasOutput<object>.Produce)))
         {
             var typeName = GetTypeName(produceMethod.ReturnType);
