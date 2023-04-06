@@ -1,5 +1,7 @@
-﻿using System.Reflection;
+﻿using System.Data;
+using System.Reflection;
 using System.Text;
+using System.Xml.Linq;
 
 namespace GbxToolAPI;
 
@@ -9,6 +11,13 @@ public static class AssetsManager<TTool> where TTool : ITool
 
     public static async ValueTask<T> GetFromYmlAsync<T>(string path)
     {
+        var toolAssetsIdentifier = typeof(TTool).GetCustomAttribute<ToolAssetsAttribute>()?.Identifier;
+
+        if (toolAssetsIdentifier is null)
+        {
+            throw new NotSupportedException($"Assets are not supported for {typeof(TTool).Name}");
+        }
+
         var entryAss = Assembly.GetEntryAssembly();
 
         var runsViaConsole = entryAss?.GetReferencedAssemblies()?
@@ -21,20 +30,17 @@ public static class AssetsManager<TTool> where TTool : ITool
                 throw new Exception("ExternalRetrieve needs to be set.");
             }
 
-            var data = await ExternalRetrieve(path);
+            // toolAssetsIdentifier is not even required
+            var id = typeof(TTool).Assembly.GetName().Name ?? throw new Exception("Tool requires an Id");
+            var route = typeof(TTool).GetCustomAttribute<ToolRouteAttribute>()?.Route ?? RegexUtils.PascalCaseToKebabCase(id);
+
+            var data = await ExternalRetrieve($"{route}/{path.Replace('\\', '/')}");
             var str = Encoding.UTF8.GetString(data);
 
             return Yml.Deserializer.Deserialize<T>(str);
         }
 
         var rootPath = entryAss?.Location is null ? "" : Path.GetDirectoryName(entryAss.Location) ?? "";
-
-        var toolAssetsIdentifier = typeof(TTool).GetCustomAttribute<ToolAssetsAttribute>()?.Identifier;
-
-        if (toolAssetsIdentifier is null)
-        {
-            throw new NotSupportedException($"Assets are not supported for {typeof(TTool).Name}");
-        }
 
         using var r = File.OpenText(Path.Combine(rootPath, "Assets", "Tools", toolAssetsIdentifier, path));
         return Yml.Deserializer.Deserialize<T>(r);
