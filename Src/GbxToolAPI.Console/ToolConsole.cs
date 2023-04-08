@@ -4,7 +4,6 @@ namespace GbxToolAPI.Console;
 
 public class ToolConsole<T> where T : class, ITool
 {
-    private static readonly string? entryPath;
     private static readonly string rootPath;
 
     public static async Task<ToolConsole<T>?> RunAsync(string[] args)
@@ -38,12 +37,11 @@ public class ToolConsole<T> where T : class, ITool
     static ToolConsole()
     {
         GBX.NET.Lzo.SetLzo(typeof(GBX.NET.LZO.MiniLZO));
-
-        entryPath = Assembly.GetEntryAssembly()?.Location;
-        rootPath = entryPath is null ? "" : Path.GetDirectoryName(entryPath) ?? "";
+        
+        rootPath = Environment.ProcessPath is null ? "" : Path.GetDirectoryName(Environment.ProcessPath) ?? "";
     }
 
-    private static Task<ToolConsole<T>> RunCanThrowAsync(string[] args)
+    private static async Task<ToolConsole<T>> RunCanThrowAsync(string[] args)
     {
         System.Console.WriteLine("Initializing the console...");
 
@@ -81,17 +79,17 @@ public class ToolConsole<T> where T : class, ITool
 
         foreach (var toolInstance in ToolConstructorPicker.CreateInstances<T>(inputFiles, consoleOptions.SingleOutput))
         {
-            RunToolInstance(toolInstance, configInstances, configPropsToSet, consoleOptions.OutputDir ?? rootPath);
+            await RunToolInstanceAsync(toolInstance, configInstances, configPropsToSet, consoleOptions.OutputDir ?? rootPath);
 
             System.Console.WriteLine();
         }
 
         System.Console.WriteLine("Complete!");
 
-        return Task.FromResult(console);
+        return console;
     }
 
-    private static void RunToolInstance(T toolInstance, Dictionary<PropertyInfo, Config> configInstances, Dictionary<PropertyInfo, object?> configPropsToSet, string outputDir)
+    private static async Task RunToolInstanceAsync(T toolInstance, Dictionary<PropertyInfo, Config> configInstances, Dictionary<PropertyInfo, object?> configPropsToSet, string outputDir)
     {
         System.Console.WriteLine("Running tool instance...");
 
@@ -114,7 +112,7 @@ public class ToolConsole<T> where T : class, ITool
 
         if (toolInstance is IHasAssets toolWithAssets)
         {
-            toolWithAssets.LoadAssetsAsync().GetAwaiter().GetResult();
+            await toolWithAssets.LoadAssetsAsync();
         }
 
         foreach (var produceMethod in typeof(T).GetMethods().Where(m => m.Name == nameof(IHasOutput<object>.Produce)))
@@ -200,6 +198,7 @@ public class ToolConsole<T> where T : class, ITool
             {
                 case "-singleoutput": // Merge will produce only one instance of Tool
                     options.SingleOutput = true;
+                    System.Console.WriteLine($": {arg}");
                     continue;
                 case "-config":
                     if (!argEnumerator.MoveNext())
@@ -208,6 +207,7 @@ public class ToolConsole<T> where T : class, ITool
                     }
 
                     options.CustomConfig = argEnumerator.Current;
+                    System.Console.WriteLine($": {arg} \"{options.CustomConfig}\"");
                     continue;
                 case "-o":
                 case "-output":
@@ -224,6 +224,7 @@ public class ToolConsole<T> where T : class, ITool
                     }
 
                     options.OutputDir = outputDir;
+                    System.Console.WriteLine($": {arg} \"{outputDir}\"");
                     continue;
             }
 

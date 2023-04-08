@@ -40,7 +40,7 @@ public static class AssetsManager<TTool> where TTool : ITool
             return Yml.Deserializer.Deserialize<T>(str);
         }
 
-        var rootPath = entryAss?.Location is null ? "" : Path.GetDirectoryName(entryAss.Location) ?? "";
+        var rootPath = Environment.ProcessPath is null ? "" : Path.GetDirectoryName(Environment.ProcessPath) ?? "";
 
         using var r = File.OpenText(Path.Combine(rootPath, "Assets", "Tools", toolAssetsIdentifier, path));
         return Yml.Deserializer.Deserialize<T>(r);
