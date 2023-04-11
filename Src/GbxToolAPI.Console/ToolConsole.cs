@@ -180,7 +180,51 @@ public class ToolConsole<T> where T : class, ITool
 
     private static ConsoleOptions GetConsoleOptions(IEnumerable<string> args, Dictionary<string, PropertyInfo> configProps, out Dictionary<PropertyInfo, object?> configPropsToSet)
     {
-        var options = new ConsoleOptions();
+        System.Console.WriteLine();
+
+        ConsoleOptions options;
+
+        if (File.Exists("ConsoleOptions.yml"))
+        {
+            System.Console.WriteLine("Using existing ConsoleOptions.yml...");
+
+            using var r = new StreamReader("ConsoleOptions.yml");
+            options = Yml.Deserializer.Deserialize<ConsoleOptions>(r)!;
+        }
+        else
+        {
+            System.Console.WriteLine("Creating new ConsoleOptions.yml...");
+            options = new ConsoleOptions();
+
+            var games = new Dictionary<string, Func<ConsoleOptions, string?>>
+            {
+                { "TrackMania Forever", o => o.TrackmaniaForeverInstallationPath },
+                { "ManiaPlanet", o => o.ManiaPlanetInstallationPath },
+                { "Trackmania Turbo", o => o.TrackmaniaTurboInstallationPath },
+                { "Trackmania 2020", o => o.Trackmania2020InstallationPath },
+            };
+
+            foreach (var (game, setting) in games)
+            {
+                while (true)
+                {
+                    System.Console.Write($"Enter your {game} installation path (leave empty if not installed or interested): ");
+
+                    var path = System.Console.ReadLine();
+
+                    if (string.IsNullOrWhiteSpace(path))
+                    {
+                        break;
+                    }
+
+                    CopyAssets(path, game is not "TrackMania Forever");
+
+                    break;
+                }
+            }
+        }
+
+        File.WriteAllText("ConsoleOptions.yml", Yml.Serializer.Serialize(options));
 
         configPropsToSet = new Dictionary<PropertyInfo, object?>();
 
@@ -253,6 +297,54 @@ public class ToolConsole<T> where T : class, ITool
         }
 
         return options;
+    }
+
+    private static void CopyAssets(string path, bool isManiaPlanet)
+    {
+        NadeoIni nadeoIni;
+
+        try
+        {
+            nadeoIni = NadeoIni.Parse(Path.Combine(path, "Nadeo.ini"));
+        }
+        catch (Exception ex)
+        {
+            System.Console.WriteLine($"Failed to parse Nadeo.ini: {ex.Message}");
+            return;
+        }
+
+        var myDocs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+        string userDataDir;
+
+        if (!string.IsNullOrWhiteSpace(nadeoIni.UserSubDir) && string.IsNullOrWhiteSpace(nadeoIni.UserDir))
+        {
+            userDataDir = Path.Combine(myDocs, nadeoIni.UserSubDir);
+        }
+        else if (string.IsNullOrWhiteSpace(nadeoIni.UserSubDir) && !string.IsNullOrWhiteSpace(nadeoIni.UserDir))
+        {
+            userDataDir = nadeoIni.UserDir.Replace("{userdocs}", myDocs);
+        }
+        else
+        {
+            System.Console.WriteLine("Nadeo.ini contains invalid UserDir/UserSubDir combination.");
+            return;
+        }
+
+        var assetsIdent = typeof(T).GetCustomAttribute<ToolAssetsAttribute>()?.Identifier ?? throw new Exception("Tool is missing ToolAssetsAttribute");
+        var assetsDir = Path.Combine(rootPath, "Assets", "Tools", assetsIdent);
+
+        foreach (var filePath in Directory.GetFiles(assetsDir, "*.*", SearchOption.AllDirectories))
+        {
+            var relativeFilePath = Path.GetRelativePath(assetsDir, filePath);
+
+            var updatedRelativePath = typeof(T).GetMethod(nameof(IHasAssets.RemapAssetRoute))?.Invoke(null, new object[] { relativeFilePath, isManiaPlanet }) as string ?? throw new Exception("Undefined file path");
+            var finalPath = Path.Combine(userDataDir, updatedRelativePath);
+
+            System.Console.WriteLine($"Copying {relativeFilePath} to {updatedRelativePath}...");
+        }
+
+        System.Console.WriteLine("Copied!");
     }
 
     private static string GetTypeName(Type type)
