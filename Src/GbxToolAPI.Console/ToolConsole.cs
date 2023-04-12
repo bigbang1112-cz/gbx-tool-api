@@ -317,13 +317,13 @@ public class ToolConsole<T> where T : class, ITool
 
         string userDataDir;
 
-        if (!string.IsNullOrWhiteSpace(nadeoIni.UserSubDir) && string.IsNullOrWhiteSpace(nadeoIni.UserDir))
-        {
-            userDataDir = Path.Combine(myDocs, nadeoIni.UserSubDir);
-        }
-        else if (string.IsNullOrWhiteSpace(nadeoIni.UserSubDir) && !string.IsNullOrWhiteSpace(nadeoIni.UserDir))
+        if (!string.IsNullOrWhiteSpace(nadeoIni.UserDir))
         {
             userDataDir = nadeoIni.UserDir.Replace("{userdocs}", myDocs);
+        }
+        else if (!string.IsNullOrWhiteSpace(nadeoIni.UserSubDir))
+        {
+            userDataDir = Path.Combine(myDocs, nadeoIni.UserSubDir);
         }
         else
         {
@@ -334,14 +334,40 @@ public class ToolConsole<T> where T : class, ITool
         var assetsIdent = typeof(T).GetCustomAttribute<ToolAssetsAttribute>()?.Identifier ?? throw new Exception("Tool is missing ToolAssetsAttribute");
         var assetsDir = Path.Combine(rootPath, "Assets", "Tools", assetsIdent);
 
+        var assetsIgnored = typeof(T).GetCustomAttributes<ToolAssetsIgnoreIngameAttribute>();
+
         foreach (var filePath in Directory.GetFiles(assetsDir, "*.*", SearchOption.AllDirectories))
         {
             var relativeFilePath = Path.GetRelativePath(assetsDir, filePath);
+
+            if (!isManiaPlanet && relativeFilePath.EndsWith(".webp", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (isManiaPlanet && relativeFilePath.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (assetsIgnored.Any(a => relativeFilePath.StartsWith(a.Path)))
+            {
+                continue;
+            }
 
             var updatedRelativePath = typeof(T).GetMethod(nameof(IHasAssets.RemapAssetRoute))?.Invoke(null, new object[] { relativeFilePath, isManiaPlanet }) as string ?? throw new Exception("Undefined file path");
             var finalPath = Path.Combine(userDataDir, updatedRelativePath);
 
             System.Console.WriteLine($"Copying {relativeFilePath} to {updatedRelativePath}...");
+
+            var finalDir = Path.GetDirectoryName(finalPath);
+
+            if (finalDir is not null)
+            {
+                Directory.CreateDirectory(finalDir);
+            }
+
+            File.Copy(filePath, finalPath, true);
         }
 
         System.Console.WriteLine("Copied!");
