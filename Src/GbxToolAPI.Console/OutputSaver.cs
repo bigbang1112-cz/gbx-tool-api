@@ -82,7 +82,15 @@ internal class OutputSaver
         
         var watch = Stopwatch.StartNew();
 
-        node.Save(Path.Combine(outputPath, Path.GetFileName(fileName))); // temporary discard of the path info
+        var savePath = Path.Combine(outputPath, fileName);
+        var saveDirPath = Path.GetDirectoryName(savePath);
+
+        if (saveDirPath is not null)
+        {
+            Directory.CreateDirectory(saveDirPath);
+        }
+
+        node.Save(savePath); // temporary discard of the path info
 
         System.Console.WriteLine($"Saved. ({watch.Elapsed.TotalMilliseconds}ms)");
     }

@@ -1,11 +1,8 @@
-﻿using System.Transactions;
-
-namespace GbxToolAPI.Console;
+﻿namespace GbxToolAPI.Console;
 
 public class NadeoIni
 {
-    public string? UserSubDir { get; init; }
-    public string? UserDir { get; init; }
+    public string UserDataDir { get; init; }
 
     public static NadeoIni Parse(string nadeoIniFilePath)
     {
@@ -37,11 +34,27 @@ public class NadeoIni
         {
             throw new Exception("No UserSubDir or UserDir found.");
         }
+        
+        var myDocs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+        string userDataDir;
+
+        if (!string.IsNullOrWhiteSpace(userDir))
+        {
+            userDataDir = userDir.Replace("{userdocs}", myDocs);
+        }
+        else if (!string.IsNullOrWhiteSpace(userSubDir))
+        {
+            userDataDir = Path.Combine(myDocs, userSubDir);
+        }
+        else
+        {
+            throw new Exception("Nadeo.ini contains invalid UserDir/UserSubDir combination.");
+        }
 
         return new NadeoIni
         {
-            UserSubDir = userSubDir,
-            UserDir = userDir
+            UserDataDir = userDataDir
         };
     }
 }

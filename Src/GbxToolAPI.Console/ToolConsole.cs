@@ -1,5 +1,8 @@
-﻿using System.Diagnostics;
+﻿using GBX.NET;
+using System.Diagnostics;
 using System.Reflection;
+using System.Text;
+
 namespace GbxToolAPI.Console;
 
 public class ToolConsole<T> where T : class, ITool
@@ -67,9 +70,12 @@ public class ToolConsole<T> where T : class, ITool
 
         var inputFiles = args.TakeWhile(arg => !arg.StartsWith('-')).ToArray();
 
-        System.Console.WriteLine();
-        System.Console.WriteLine("Detected input files:\n- " + string.Join("\n- ", inputFiles.Select(Path.GetFileName)));
-
+        if (inputFiles.Length > 0)
+        {
+            System.Console.WriteLine();
+            System.Console.WriteLine("Detected input files:\n- " + string.Join("\n- ", inputFiles.Select(Path.GetFileName)));
+        }
+        
         var remainingArgs = args.Skip(inputFiles.Length);
 
         var consoleOptions = GetConsoleOptions(remainingArgs, configProps, out var configPropsToSet);
@@ -77,9 +83,26 @@ public class ToolConsole<T> where T : class, ITool
 
         System.Console.WriteLine();
 
-        foreach (var toolInstance in ToolConstructorPicker.CreateInstances<T>(inputFiles, consoleOptions.SingleOutput))
+        var inputByType = CreateInputDictionaryFromFiles(inputFiles);
+        var userDataPathDict = new Dictionary<string, string>();
+
+        foreach (var (toolInstance, ctorParams) in ToolConstructorPicker.CreateInstances<T>(inputByType, consoleOptions.SingleOutput))
         {
-            await RunToolInstanceAsync(toolInstance, configInstances, configPropsToSet, consoleOptions.OutputDir ?? rootPath);
+            var installPath = GetSuitableInstallationPath(ctorParams, consoleOptions);
+            var userDataPath = default(string);
+            
+            if (installPath is not null)
+            {
+                if (!userDataPathDict.TryGetValue(installPath, out userDataPath))
+                {
+                    userDataPath = NadeoIni.Parse(Path.Combine(installPath, "Nadeo.ini")).UserDataDir;
+                    userDataPathDict.Add(installPath, userDataPath);
+                }
+            }
+
+            var finalPath = consoleOptions.OutputDir ?? userDataPath ?? Path.Combine(rootPath, "Output");
+
+            await RunToolInstanceAsync(toolInstance, configInstances, configPropsToSet, finalPath);
 
             System.Console.WriteLine();
         }
@@ -87,6 +110,123 @@ public class ToolConsole<T> where T : class, ITool
         System.Console.WriteLine("Complete!");
 
         return console;
+    }
+
+    private static Dictionary<Type, ICollection<object>> CreateInputDictionaryFromFiles(string[] files)
+    {
+        var dict = new Dictionary<Type, ICollection<object>>();
+
+        foreach (var typeGroup in GetFileObjectInstances(files).GroupBy(obj => obj.GetType()))
+        {
+            var list = new List<object>();
+
+            foreach (var obj in typeGroup)
+            {
+                list.Add(obj);
+            }
+
+            dict.Add(typeGroup.Key, list);
+        }
+
+        return dict;
+    }
+
+    private static IEnumerable<object> GetFileObjectInstances(string[] files)
+    {
+        foreach (var file in files)
+        {
+            if (IsTextFile(file))
+            {
+                yield return new TextFile(File.ReadAllText(file));
+                continue;
+            }
+
+            System.Console.WriteLine("Parsing " + Path.GetFileName(file) + "...");
+
+            Node? node;
+
+            try
+            {
+                node = GameBox.ParseNode(file);
+            }
+            catch (Exception ex)
+            {
+                System.Console.WriteLine(ex);
+                continue;
+            }
+
+            yield return node is null ? new BinFile(File.ReadAllBytes(file)) : node;
+        }
+
+        System.Console.WriteLine();
+    }
+
+    private static bool IsTextFile(string filePath)
+    {
+        try
+        {
+            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+            using var r = new StreamReader(fs, Encoding.UTF8, true, 1024, true);
+
+            while (!r.EndOfStream)
+            {
+                int charValue = r.Read();
+                if (charValue == 0)
+                {
+                    // file has null byte, considered binary
+                    return false;
+                }
+            }
+
+            // file doesn't contain null bytes or invalid UTF-8 sequences, considered text
+            return true;
+        }
+        catch (DecoderFallbackException)
+        {
+            // invalid UTF-8 sequence, considered binary
+            return false;
+        }
+    }
+
+    private static string? GetSuitableInstallationPath(object[] ctorParams, ConsoleOptions options)
+    {        
+        foreach (var input in ctorParams)
+        {
+            if (input is not Node node)
+            {
+                continue;
+            }
+
+            var isTM2020 = GameVersion.IsTM2020(node);
+
+            if (isTM2020.HasValue && isTM2020.Value)
+            {
+                return options.Trackmania2020InstallationPath;
+            }
+            
+            var canBeTurbo = GameVersion.CanBeTMTurbo(node);
+            
+            if (canBeTurbo.HasValue && canBeTurbo.Value)
+            {
+                return options.TrackmaniaTurboInstallationPath;
+            }
+
+            var isManiaPlanet = GameVersion.IsManiaPlanet(node);
+
+            if (isManiaPlanet.HasValue && isManiaPlanet.Value)
+            {
+                return options.ManiaPlanetInstallationPath;
+            }
+
+            var isTMF = GameVersion.IsTMF(node);
+
+            if (isTMF.HasValue && isTMF.Value)
+            {
+                return options.TrackmaniaForeverInstallationPath;
+            }
+        }
+
+        return null;
     }
 
     private static async Task RunToolInstanceAsync(T toolInstance, Dictionary<PropertyInfo, Config> configInstances, Dictionary<PropertyInfo, object?> configPropsToSet, string outputDir)
@@ -182,13 +322,15 @@ public class ToolConsole<T> where T : class, ITool
     {
         System.Console.WriteLine();
 
+        var consoleOptionsPath = Path.Combine(rootPath, "ConsoleOptions.yml");
+
         ConsoleOptions options;
 
-        if (File.Exists("ConsoleOptions.yml"))
+        if (File.Exists(consoleOptionsPath))
         {
             System.Console.WriteLine("Using existing ConsoleOptions.yml...");
 
-            using var r = new StreamReader("ConsoleOptions.yml");
+            using var r = new StreamReader(consoleOptionsPath);
             options = Yml.Deserializer.Deserialize<ConsoleOptions>(r)!;
         }
         else
@@ -196,12 +338,12 @@ public class ToolConsole<T> where T : class, ITool
             System.Console.WriteLine("Creating new ConsoleOptions.yml...");
             options = new ConsoleOptions();
 
-            var games = new Dictionary<string, Func<ConsoleOptions, string?>>
+            var games = new Dictionary<string, Action<ConsoleOptions, string?>>
             {
-                { "TrackMania Forever", o => o.TrackmaniaForeverInstallationPath },
-                { "ManiaPlanet", o => o.ManiaPlanetInstallationPath },
-                { "Trackmania Turbo", o => o.TrackmaniaTurboInstallationPath },
-                { "Trackmania 2020", o => o.Trackmania2020InstallationPath },
+                { "TrackMania Forever", (o, x) => o.TrackmaniaForeverInstallationPath = x },
+                { "ManiaPlanet", (o, x) => o.ManiaPlanetInstallationPath = x },
+                { "Trackmania Turbo", (o, x) => o.TrackmaniaTurboInstallationPath = x },
+                { "Trackmania 2020", (o, x) => o.Trackmania2020InstallationPath = x },
             };
 
             foreach (var (game, setting) in games)
@@ -219,12 +361,14 @@ public class ToolConsole<T> where T : class, ITool
 
                     CopyAssets(path, game is not "TrackMania Forever");
 
+                    setting(options, path);
+
                     break;
                 }
             }
         }
 
-        File.WriteAllText("ConsoleOptions.yml", Yml.Serializer.Serialize(options));
+        File.WriteAllText(consoleOptionsPath, Yml.Serializer.Serialize(options));
 
         configPropsToSet = new Dictionary<PropertyInfo, object?>();
 
@@ -313,24 +457,6 @@ public class ToolConsole<T> where T : class, ITool
             return;
         }
 
-        var myDocs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-
-        string userDataDir;
-
-        if (!string.IsNullOrWhiteSpace(nadeoIni.UserDir))
-        {
-            userDataDir = nadeoIni.UserDir.Replace("{userdocs}", myDocs);
-        }
-        else if (!string.IsNullOrWhiteSpace(nadeoIni.UserSubDir))
-        {
-            userDataDir = Path.Combine(myDocs, nadeoIni.UserSubDir);
-        }
-        else
-        {
-            System.Console.WriteLine("Nadeo.ini contains invalid UserDir/UserSubDir combination.");
-            return;
-        }
-
         var assetsIdent = typeof(T).GetCustomAttribute<ToolAssetsAttribute>()?.Identifier ?? throw new Exception("Tool is missing ToolAssetsAttribute");
         var assetsDir = Path.Combine(rootPath, "Assets", "Tools", assetsIdent);
 
@@ -356,7 +482,7 @@ public class ToolConsole<T> where T : class, ITool
             }
 
             var updatedRelativePath = typeof(T).GetMethod(nameof(IHasAssets.RemapAssetRoute))?.Invoke(null, new object[] { relativeFilePath, isManiaPlanet }) as string ?? throw new Exception("Undefined file path");
-            var finalPath = Path.Combine(userDataDir, updatedRelativePath);
+            var finalPath = Path.Combine(nadeoIni.UserDataDir, updatedRelativePath);
 
             System.Console.WriteLine($"Copying {relativeFilePath} to {updatedRelativePath}...");
 
