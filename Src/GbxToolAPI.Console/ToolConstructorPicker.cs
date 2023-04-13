@@ -1,15 +1,12 @@
 ﻿using GBX.NET;
-using System;
 using System.Text;
 
 namespace GbxToolAPI.Console;
 
 static class ToolConstructorPicker
 {
-    internal static IEnumerable<T> CreateInstances<T>(string[] files, bool singleOutput) where T : class, ITool
-    {
-        var inputByType = CreateInputDictionaryFromFiles(files);
-        
+    internal static IEnumerable<(T, object[])> CreateInstances<T>(Dictionary<Type, ICollection<object>> inputByType, bool singleOutput) where T : class, ITool
+    {        
         foreach (var ctor in typeof(T).GetConstructors())
         {
             var ctorParams = ctor.GetParameters();
@@ -82,91 +79,15 @@ static class ToolConstructorPicker
 
             if (bulkParamIndex is null)
             {
-                yield return ctor.Invoke(ctorParamValuesToServe) as T ?? throw new Exception("Invalid constructor");
+                yield return (ctor.Invoke(ctorParamValuesToServe) as T ?? throw new Exception("Invalid constructor"), ctorParamValuesToServe);
                 continue;
             }
 
             foreach (var val in bulkParamList)
             {
                 ctorParamValuesToServe[bulkParamIndex.Value] = val;
-                yield return ctor.Invoke(ctorParamValuesToServe) as T ?? throw new Exception("Invalid constructor");
+                yield return (ctor.Invoke(ctorParamValuesToServe) as T ?? throw new Exception("Invalid constructor"), ctorParamValuesToServe);
             }
-        }
-    }
-
-    private static Dictionary<Type, ICollection<object>> CreateInputDictionaryFromFiles(string[] files)
-    {
-        var dict = new Dictionary<Type, ICollection<object>>();
-
-        foreach (var typeGroup in GetFileObjectInstances(files).GroupBy(obj => obj.GetType()))
-        {
-            var list = new List<object>();
-
-            foreach (var obj in typeGroup)
-            {
-                list.Add(obj);
-            }
-
-            dict.Add(typeGroup.Key, list);
-        }
-
-        return dict;
-    }
-
-    private static IEnumerable<object> GetFileObjectInstances(string[] files)
-    {
-        foreach (var file in files)
-        {
-            if (IsTextFile(file))
-            {
-                yield return new TextFile(File.ReadAllText(file));
-                continue;
-            }
-
-            System.Console.WriteLine("Parsing " + Path.GetFileName(file) + "...");
-
-            Node? node;
-
-            try
-            {
-                node = GameBox.ParseNode(file);
-            }
-            catch (Exception ex)
-            {
-                System.Console.WriteLine(ex);
-                continue;
-            }
-            
-            yield return node is null ? new BinFile(File.ReadAllBytes(file)) : node;
-        }
-        
-        System.Console.WriteLine();
-    }
-
-    public static bool IsTextFile(string filePath)
-    {
-        try
-        {
-            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-            using var r = new StreamReader(fs, Encoding.UTF8, true, 1024, true);
-            
-            while (!r.EndOfStream)
-            {
-                int charValue = r.Read();
-                if (charValue == 0)
-                {
-                    // file has null byte, considered binary
-                    return false;
-                }
-            }
-            
-            // file doesn't contain null bytes or invalid UTF-8 sequences, considered text
-            return true;
-        }
-        catch (DecoderFallbackException)
-        {
-            // invalid UTF-8 sequence, considered binary
-            return false;
         }
     }
 }
