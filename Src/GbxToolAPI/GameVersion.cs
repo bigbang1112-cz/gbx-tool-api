@@ -10,9 +10,14 @@ public static class GameVersion
         return ghost.Chunks.Any(chunk => chunk.Id > 0x03092019 && chunk.Id <= 0x03092FFF);
     }
     
+    public static bool IsManiaPlanet(CGameCtnChallenge map)
+    {
+        return map.Chunks.Any(chunk => chunk.Id > 0x0304302A && chunk.Id <= 0x03043FFF);
+    }
+
     public static bool? IsManiaPlanet(Node node) => node switch
     {
-        CGameCtnChallenge map => map.Chunks.Any(chunk => chunk.Id > 0x0304302A && chunk.Id <= 0x03043FFF),
+        CGameCtnChallenge map => IsManiaPlanet(map),
         CGameCtnReplayRecord replay => replay.Chunks.Any(chunk => chunk.Id > 0x03093015 && chunk.Id <= 0x03093FFF),
         CGameCtnGhost ghost => IsManiaPlanet(ghost),
         _ => null
