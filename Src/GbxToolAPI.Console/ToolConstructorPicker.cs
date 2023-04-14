@@ -1,7 +1,4 @@
-﻿using GBX.NET;
-using System.Text;
-
-namespace GbxToolAPI.Console;
+﻿namespace GbxToolAPI.Console;
 
 static class ToolConstructorPicker
 {
