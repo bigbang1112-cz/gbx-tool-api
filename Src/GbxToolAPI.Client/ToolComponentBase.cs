@@ -27,8 +27,21 @@ public abstract class ToolComponentBase<T> : ComponentBase where T : class, IToo
     [Inject]
     public required Blazored.LocalStorage.ISyncLocalStorageService SyncLocalStorage { get; set; }
 
+    [Inject]
+    public required Blazored.LocalStorage.ILocalStorageService LocalStorage { get; set; }
+
     public ToolComponentBase()
     {
         
+    }
+
+    public void UpdateConfig()
+    {
+        SyncLocalStorage.SetItem($"Tool:{Route}:Config", Configs.ToDictionary(x => x.Key, x => (object)x.Value));
+    }
+
+    public async Task UpdateConfigAsync()
+    {
+        await LocalStorage.SetItemAsync($"Tool:{Route}:Config", Configs.ToDictionary(x => x.Key, x => (object)x.Value));
     }
 }
