@@ -324,6 +324,8 @@ public class ToolConsole<T> where T : class, ITool
 
         var consoleOptionsPath = Path.Combine(rootPath, "ConsoleOptions.yml");
 
+        var updatedAssets = false;
+
         ConsoleOptions options;
 
         if (File.Exists(consoleOptionsPath))
@@ -387,6 +389,8 @@ public class ToolConsole<T> where T : class, ITool
                     break;
                 }
             }
+
+            updatedAssets = true;
         }
 
         File.WriteAllText(consoleOptionsPath, Yml.Serializer.Serialize(options));
@@ -434,6 +438,53 @@ public class ToolConsole<T> where T : class, ITool
 
                     options.OutputDir = outputDir;
                     System.Console.WriteLine($": {arg} \"{outputDir}\"");
+                    continue;
+                case "-updateassets":
+
+                    var gamesForAssets = new Dictionary<string, Func<ConsoleOptions, string?>>
+                    {
+                        { Constants.TrackManiaForever, o => o.TrackmaniaForeverInstallationPath },
+                        { Constants.ManiaPlanet, o => o.ManiaPlanetInstallationPath },
+                        { Constants.TrackmaniaTurbo, o => o.TrackmaniaTurboInstallationPath },
+                        { Constants.Trackmania2020, o => o.Trackmania2020InstallationPath },
+                    };
+                    
+                    foreach (var (game, setting) in gamesForAssets)
+                    {
+                        var path = setting(options);
+                            
+                        if (string.IsNullOrWhiteSpace(path))
+                        {
+                            break;
+                        }
+
+                        if (!Directory.Exists(path))
+                        {
+                            System.Console.WriteLine("Directory does not exist.");
+                            continue;
+                        }
+
+                        var gameExeMapping = game switch
+                        {
+                            Constants.TrackManiaForever => "TmForever.exe",
+                            Constants.ManiaPlanet => "ManiaPlanet.exe",
+                            Constants.TrackmaniaTurbo => "TrackmaniaTurbo.exe",
+                            Constants.Trackmania2020 => "Trackmania.exe",
+                            _ => throw new Exception("Game is not supported")
+                        };
+
+                        if (!File.Exists(Path.Combine(path, gameExeMapping)))
+                        {
+                            System.Console.WriteLine("Correct game executable not found in this directory.");
+                            continue;
+                        }
+
+                        CopyAssets(path, game is not Constants.TrackManiaForever);
+
+                        break;
+                    }
+
+                    System.Console.WriteLine($": {arg} {(updatedAssets ? "(already updated)" : "")}");
                     continue;
             }
 
