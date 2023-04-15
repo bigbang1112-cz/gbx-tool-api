@@ -50,29 +50,7 @@
     [Parameter]
     public bool Produces { get; set; }
 
-    public bool CanProceed
-    {
-        get
-        {
-            foreach (var importType in ImportTypes)
-            {
-                var parameters = importType.Parameters;
-
-                for (var i = 0; i < parameters.Count; i++)
-                {
-                    var p = parameters[i];
-                    var importedFile = p.ImportedFiles.Length > 0;
-
-                    if (!importedFile || importType.Invalid)
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
-        }
-    }
+    public bool CanProceed { get; private set; }
 
     [Parameter]
     [EditorRequired]
@@ -220,6 +198,30 @@
             }
         }
 
+        UpdateCanProceed();
+
         await SelectionChanged.InvokeAsync();
+    }
+
+    private void UpdateCanProceed()
+    {
+        foreach (var importType in ImportTypes)
+        {
+            var parameters = importType.Parameters;
+
+            for (var i = 0; i < parameters.Count; i++)
+            {
+                var p = parameters[i];
+                var importedFile = p.ImportedFiles.Length > 0;
+
+                if (!importedFile || importType.Invalid)
+                {
+                    CanProceed = false;
+                    return;
+                }
+            }
+        }
+
+        CanProceed = true;
     }
 }
