@@ -29,7 +29,12 @@
         </div>
 
         @{
-            var config = Configs[SelectedConfigName];
+            if (!Configs.TryGetValue(SelectedConfigName, out var config))
+            {
+                SelectedConfigName = "Default";
+                config = Configs[SelectedConfigName];
+            }
+
             var type = config.GetType();
             var props = type.GetProperties();
         }
