@@ -60,18 +60,22 @@
     [Parameter]
     [EditorRequired]
     public IEnumerable<UtilImportType> ImportTypes { get; set; } = Enumerable.Empty<UtilImportType>();
-    
+
+    [Parameter]
+    [EditorRequired]
+    public EventCallback SelectionChanged { get; set; }
+
     protected override void OnInitialized()
     {
         suggestedTypeNames = ImportTypes.SelectMany(x => x.Parameters)
             .Select(x => x.TypeName)
             .Distinct()
             .ToHashSet();
-            
+
         GbxService.Gbxs.CollectionChanged += Gbxs_CollectionChanged;
     }
 
-    private void Gbxs_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    private async void Gbxs_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         var selectionChanged = false;
 
@@ -95,7 +99,7 @@
 
         if (selectionChanged)
         {
-            OnSelectionChanged();
+            await OnSelectionChanged();
         }
 
         StateHasChanged();
@@ -126,7 +130,7 @@
         return false;
     }
 
-    private void ChangeGbxSelection(GbxModel gbx)
+    private async Task ChangeGbxSelection(GbxModel gbx)
     {
         if (GbxSelection.Contains(gbx))
         {
@@ -137,30 +141,30 @@
             GbxSelection.Add(gbx);
         }
 
-        OnSelectionChanged();
+        await OnSelectionChanged();
     }
 
-    private void SelectAll()
+    private async Task SelectAll()
     {
         foreach (var gbx in FilterGbxsBySuggestedTypes(GbxService.Gbxs))
         {
             GbxSelection.Add(gbx);
         }
 
-        OnSelectionChanged();
+        await OnSelectionChanged();
     }
 
-    private void DeselectAll()
+    private async Task DeselectAll()
     {
         foreach (var gbx in FilterGbxsBySuggestedTypes(GbxService.Gbxs))
         {
             GbxSelection.Remove(gbx);
         }
 
-        OnSelectionChanged();
+        await OnSelectionChanged();
     }
 
-    private void OnSelectionChanged()
+    private async Task OnSelectionChanged()
     {
         var gbxModelByTypeName = GbxSelection.ToLookup(x =>
         {
@@ -194,5 +198,7 @@
                 }
             }
         }
+
+        await SelectionChanged.InvokeAsync();
     }
 }
