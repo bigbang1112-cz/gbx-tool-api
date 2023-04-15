@@ -207,6 +207,8 @@
     {
         foreach (var importType in ImportTypes)
         {
+            CanProceed = true;
+
             var parameters = importType.Parameters;
 
             for (var i = 0; i < parameters.Count; i++)
@@ -217,11 +219,13 @@
                 if (!importedFile || importType.Invalid)
                 {
                     CanProceed = false;
-                    return;
                 }
             }
-        }
 
-        CanProceed = true;
+            if (CanProceed)
+            {
+                break;
+            }
+        }
     }
 }
