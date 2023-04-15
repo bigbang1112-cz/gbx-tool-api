@@ -80,7 +80,7 @@
         set
         {
             selectedConfigName = value;
-            SyncLocalStorage.SetItem($"Tool:{Route}:Config:Selected", selectedConfigName);
+            SyncLocalStorage.SetItemAsString($"Tool:{Route}:Config:Selected", selectedConfigName);
             OnConfigChanged();
         }
     }
@@ -98,7 +98,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        SelectedConfigName = await LocalStorage.GetItemAsync<string>($"Tool:{Route}:Config:Selected") ?? "Default";
+        SelectedConfigName = await LocalStorage.GetItemAsStringAsync($"Tool:{Route}:Config:Selected") ?? "Default";
     }
 
     private Dictionary<string, object?> GetPropertyValueDisplayParameters(PropertyInfo property, object owner, string toolRoute)
