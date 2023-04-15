@@ -2,6 +2,10 @@
     font-size: 0.8rem;
 }
 
+h4 {
+    text-align: center;
+}
+
 .config {
     display: flex;
     flex-direction: column;

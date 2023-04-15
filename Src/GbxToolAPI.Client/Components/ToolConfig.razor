@@ -81,16 +81,20 @@
         {
             selectedConfigName = value;
             SyncLocalStorage.SetItem($"Tool:{Route}:Config:Selected", selectedConfigName);
+            OnConfigChanged();
         }
     }
 
     [Parameter]
     [EditorRequired]
     public string? Route { get; set; }
-    
+
     [Parameter]
     [EditorRequired]
     public Dictionary<string, Config> Configs { get; set; } = new();
+
+    [Parameter]
+    public EventCallback ConfigChanged { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -106,6 +110,7 @@
             { "ToolRoute", toolRoute },
             { "ToolConfig", owner },
             { "ToolConfigName", SelectedConfigName },
+            { "ConfigChanged", () => OnConfigChanged() },
         };
     }
 
@@ -153,5 +158,10 @@
         Configs[configName] = (Config)JsonSerializer.Deserialize(configsTemp[configName], configToSave.GetType(), Json.DefaultOptions)!;
 
         SelectedConfigName = configName;
+    }
+
+    private async void OnConfigChanged()
+    {
+        await ConfigChanged.InvokeAsync();
     }
 }
