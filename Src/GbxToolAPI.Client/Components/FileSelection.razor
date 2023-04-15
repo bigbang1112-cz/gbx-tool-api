@@ -50,8 +50,29 @@
     [Parameter]
     public bool Produces { get; set; }
 
-    [Parameter]
-    public bool CanProceed { get; set; }
+    public bool CanProceed
+    {
+        get
+        {
+            foreach (var importType in ImportTypes)
+            {
+                var parameters = importType.Parameters;
+
+                for (var i = 0; i < parameters.Count; i++)
+                {
+                    var p = parameters[i];
+                    var importedFile = p.ImportedFiles.Length > 0;
+
+                    if (!importedFile || importType.Invalid)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+    }
 
     [Parameter]
     [EditorRequired]

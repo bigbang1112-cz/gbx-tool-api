@@ -53,16 +53,12 @@
 
             @if (allFilesImportedAndValid)
             {
-                CanProceed = true;
-
                 <div class="rectangle proceed-specific highlighted-green" title="This method will be used.">
                     <img src="img/checkmark.svg" width="24" />
                 </div>
             }
             else
             {
-                CanProceed = false;
-
                 <button class="rectangle proceed-specific @(importType.Invalid ? "highlighted-red" : "")" title="@(importType.Invalid ? "Parameters have been assigned incorrectly." : "No file has been selected for this method.")" disabled>
                     <img src="img/x.svg" width="24" />
                 </button>
@@ -76,6 +72,4 @@
     [Parameter]
     [EditorRequired]
     public IEnumerable<UtilImportType> ImportTypes { get; set; } = Enumerable.Empty<UtilImportType>();
-
-    public bool CanProceed { get; set; }
 }
