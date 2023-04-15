@@ -1,6 +1,7 @@
-h2, h3 {
+h3 {
     margin: 20px 0 10px 0;
     text-align: center;
+    font-size: 1.8rem;
 }
 
 .import-looking-for-grid {
