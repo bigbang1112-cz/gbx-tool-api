@@ -1,10 +1,18 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using GbxToolAPI.Client.Models;
+using GbxToolAPI.Client.Models.UtilImport;
+using Microsoft.AspNetCore.Components;
 
 namespace GbxToolAPI.Client;
 
 public abstract class ToolComponentBase<T> : ComponentBase where T : class, ITool
 {
     private string selectedConfigName = "Default";
+
+    [Inject]
+    public required Blazored.LocalStorage.ISyncLocalStorageService SyncLocalStorage { get; set; }
+
+    [Inject]
+    public required Blazored.LocalStorage.ILocalStorageService LocalStorage { get; set; }
 
     [Parameter]
     [EditorRequired]
@@ -24,11 +32,13 @@ public abstract class ToolComponentBase<T> : ComponentBase where T : class, IToo
     [EditorRequired]
     public required Dictionary<string, Config> Configs { get; set; } = new();
 
-    [Inject]
-    public required Blazored.LocalStorage.ISyncLocalStorageService SyncLocalStorage { get; set; }
+    [Parameter]
+    [EditorRequired]
+    public HashSet<GbxModel> GbxSelection { get; set; } = new();
 
-    [Inject]
-    public required Blazored.LocalStorage.ILocalStorageService LocalStorage { get; set; }
+    [Parameter]
+    [EditorRequired]
+    public IEnumerable<UtilImportType> ImportTypes { get; set; } = Enumerable.Empty<UtilImportType>();
 
     public ToolComponentBase()
     {
