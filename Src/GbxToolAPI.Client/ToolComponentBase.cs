@@ -6,8 +6,6 @@ namespace GbxToolAPI.Client;
 
 public abstract class ToolComponentBase<T> : ComponentBase where T : class, ITool
 {
-    private string selectedConfigName = "Default";
-
     [Inject]
     public required Blazored.LocalStorage.ISyncLocalStorageService SyncLocalStorage { get; set; }
 
@@ -20,11 +18,20 @@ public abstract class ToolComponentBase<T> : ComponentBase where T : class, IToo
 
     public string SelectedConfigName
     {
-        get => selectedConfigName;
+        get
+        {
+            var val = SyncLocalStorage.GetItemAsString($"Tool:{Route}:Config:Selected");
+
+            if (string.IsNullOrEmpty(val))
+            {
+                return "Default";
+            }
+
+            return val;
+        }
         set
         {
-            selectedConfigName = value;
-            SyncLocalStorage.SetItem($"Tool:{Route}:Config:Selected", selectedConfigName);
+            SyncLocalStorage.SetItem($"Tool:{Route}:Config:Selected", value);
         }
     }
 
