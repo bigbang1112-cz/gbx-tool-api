@@ -1,0 +1,34 @@
+.imported-gbxs {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: 292px;
+}
+
+    .imported-gbxs .gbx-list {
+        display: grid;
+        grid-auto-rows: min-content;
+        grid-gap: 4px;
+        padding: 4px;
+        flex: 1;
+        background: #0004;
+        border-radius: 3px;
+        overflow: auto;
+    }
+
+        .imported-gbxs .gbx-list > div {
+            background: #3333;
+            border-radius: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            padding: 2px 8px;
+            cursor: pointer;
+        }
+
+            .imported-gbxs .gbx-list > div:hover {
+                background: var(--button-blue);
+            }
+
+            .imported-gbxs .gbx-list > div.selected {
+                background: var(--button-blue);
+            }
