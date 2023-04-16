@@ -33,13 +33,20 @@
         <button class="button-util" style="flex: 1" disabled>Auto-@(Produces ? "produce" : "proceed")</button>
     </div>
 
-    @if (Produces && CanProceed)
+    @if (CanProceed)
     {
-        <a href="@NavMgr.GetUriWithQueryParameter("produce", "selected")" class="button proceed-general">Produce</a>
+        if (Produces)
+        {
+            <a href="@NavMgr.GetUriWithQueryParameter("produce", "selected")" class="button proceed-general">Produce</a>
+        }
+        else
+        {
+            <a href="@NavMgr.GetUriWithQueryParameter("proceed", "selected")" class="button proceed-general">Proceed</a>
+        }
     }
     else
     {
-        <button class="proceed-general" disabled="@(!CanProceed)">@(Produces ? "Produce" : "Proceed")</button>
+        <button class="proceed-general" disabled>@(Produces ? "Produce" : "Proceed")</button>
     }
 
 </div>
