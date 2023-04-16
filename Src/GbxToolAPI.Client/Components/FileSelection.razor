@@ -79,6 +79,8 @@
             .ToHashSet();
 
         GbxService.Gbxs.CollectionChanged += Gbxs_CollectionChanged;
+
+        UpdateCanProceed();
     }
 
     private async void Gbxs_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
