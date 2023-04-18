@@ -1,4 +1,5 @@
 ﻿using GBX.NET;
+using System.Collections;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
@@ -192,7 +193,21 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
     {
         foreach (var input in ctorParams)
         {
-            if (input is not Node node)
+            var inputOrFirstInput = input;
+
+            if (input is IEnumerable enumerable)
+            {
+                var enumerator = enumerable.GetEnumerator();
+
+                if (!enumerator.MoveNext())
+                {
+                    return null;
+                }
+
+                inputOrFirstInput = enumerator.Current;
+            }
+
+            if (inputOrFirstInput is not Node node)
             {
                 continue;
             }
