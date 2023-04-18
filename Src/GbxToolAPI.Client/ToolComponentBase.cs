@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Components;
 
 namespace GbxToolAPI.Client;
 
-public abstract class ToolComponentBase<T> : ComponentBase where T : class, ITool
+public abstract class ToolComponentBase<T> : ComponentBase, IAsyncDisposable where T : class, ITool
 {
     [Inject]
     public required Blazored.LocalStorage.ISyncLocalStorageService SyncLocalStorage { get; set; }
@@ -60,5 +60,27 @@ public abstract class ToolComponentBase<T> : ComponentBase where T : class, IToo
     public async Task UpdateConfigAsync()
     {
         await LocalStorage.SetItemAsync($"Tool:{Route}:Config", Configs.ToDictionary(x => x.Key, x => (object)x.Value));
+    }
+    
+    private bool disposedValue = false; // To detect redundant calls
+
+    protected virtual async ValueTask DisposeAsync(bool disposing)
+    {
+        if (!disposedValue)
+        {
+            if (disposing)
+            {
+                // Dispose of any disposable resources used by the component asynchronously
+            }
+
+            disposedValue = true;
+        }
+        await ValueTask.CompletedTask;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await DisposeAsync(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }
