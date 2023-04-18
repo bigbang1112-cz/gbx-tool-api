@@ -6,7 +6,7 @@ using System.Text;
 
 namespace GbxToolAPI.Console;
 
-public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] T> where T : class, ITool
+public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.Interfaces)] T> where T : class, ITool
 {
     private static readonly string rootPath;
 
