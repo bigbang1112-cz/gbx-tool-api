@@ -1,8 +1,10 @@
-﻿namespace GbxToolAPI.Console;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace GbxToolAPI.Console;
 
 static class ToolConstructorPicker
 {
-    internal static IEnumerable<(T, object[])> CreateInstances<T>(Dictionary<Type, ICollection<object>> inputByType, bool singleOutput) where T : class, ITool
+    internal static IEnumerable<(T, object[])> CreateInstances<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(Dictionary<Type, ICollection<object>> inputByType, bool singleOutput) where T : class, ITool
     {        
         foreach (var ctor in typeof(T).GetConstructors())
         {

@@ -6,7 +6,7 @@ using System.Text;
 
 namespace GbxToolAPI.Console;
 
-public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.Interfaces | DynamicallyAccessedMemberTypes.PublicProperties)] T> where T : class, ITool
+public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.Interfaces | DynamicallyAccessedMemberTypes.PublicConstructors)] T> where T : class, ITool
 {
     private static readonly string rootPath;
 
@@ -63,7 +63,6 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
         var console = new ToolConsole<T>();
 
         System.Console.WriteLine("Using the tool: " + type.GetCustomAttribute<ToolNameAttribute>()?.Name);
-        System.Console.WriteLine("Retrieving possible config options...");
 
         var configProps = GetConfigProps(out var configPropTypes);
 
@@ -591,18 +590,20 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 
     private static Dictionary<string, PropertyInfo> GetConfigProps(out IList<PropertyInfo> configs)
     {
-        var interfaces = typeof(T).GetInterfaces();
+        System.Console.WriteLine("Retrieving possible config options...");
+        
+        var configurables = typeof(T).GetInterfaces()
+            .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IConfigurable<>))
+            .Select(x => x.GetGenericArguments()[0])
+            .ToHashSet();
 
         configs = new List<PropertyInfo>();
 
-        foreach (var iface in interfaces)
+        foreach (var prop in typeof(T).GetProperties())
         {
-            switch (iface.Name)
+            if (prop.Name == "Config" && configurables.Contains(prop.PropertyType))
             {
-                case "IConfigurable`1":
-                    if (!iface.IsGenericType) break;
-                    configs.Add(iface.GetProperty(nameof(IConfigurable<Config>.Config)) ?? throw new UnreachableException("Config property not available"));
-                    break;
+                configs.Add(prop);
             }
         }
 
