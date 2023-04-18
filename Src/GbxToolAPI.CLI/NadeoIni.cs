@@ -1,4 +1,4 @@
-﻿namespace GbxToolAPI.Console;
+﻿namespace GbxToolAPI.CLI;
 
 public class NadeoIni
 {
@@ -34,7 +34,7 @@ public class NadeoIni
         {
             throw new Exception("No UserSubDir or UserDir found.");
         }
-        
+
         var myDocs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
         string userDataDir;

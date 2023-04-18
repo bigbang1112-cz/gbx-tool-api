@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text;
 
-namespace GbxToolAPI.Console;
+namespace GbxToolAPI.CLI;
 
 public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.Interfaces | DynamicallyAccessedMemberTypes.PublicConstructors)] T> where T : class, ITool
 {
@@ -40,8 +40,8 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 
     static ToolConsole()
     {
-        GBX.NET.Lzo.SetLzo(typeof(GBX.NET.LZO.MiniLZO));
-        
+        Lzo.SetLzo(typeof(GBX.NET.LZO.MiniLZO));
+
         rootPath = Environment.ProcessPath is null ? "" : Path.GetDirectoryName(Environment.ProcessPath) ?? "";
     }
 
@@ -75,7 +75,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
             System.Console.WriteLine();
             System.Console.WriteLine("Detected input files:\n- " + string.Join("\n- ", inputFiles.Select(Path.GetFileName)));
         }
-        
+
         var remainingArgs = args.Skip(inputFiles.Length);
 
         var consoleOptions = GetConsoleOptions(remainingArgs, configProps, out var configPropsToSet);
@@ -90,7 +90,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
         {
             var installPath = GetSuitableInstallationPath(ctorParams, consoleOptions);
             var userDataPath = default(string);
-            
+
             if (installPath is not null)
             {
                 if (!userDataPathDict.TryGetValue(installPath, out userDataPath))
@@ -189,7 +189,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
     }
 
     private static string? GetSuitableInstallationPath(object[] ctorParams, ConsoleOptions options)
-    {        
+    {
         foreach (var input in ctorParams)
         {
             if (input is not Node node)
@@ -203,9 +203,9 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
             {
                 return options.Trackmania2020InstallationPath;
             }
-            
+
             var canBeTurbo = GameVersion.CanBeTMTurbo(node);
-            
+
             if (canBeTurbo.HasValue && canBeTurbo.Value)
             {
                 return options.TrackmaniaTurboInstallationPath;
@@ -448,11 +448,11 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
                         { Constants.TrackmaniaTurbo, o => o.TrackmaniaTurboInstallationPath },
                         { Constants.Trackmania2020, o => o.Trackmania2020InstallationPath },
                     };
-                    
+
                     foreach (var (game, setting) in gamesForAssets)
                     {
                         var path = setting(options);
-                            
+
                         if (string.IsNullOrWhiteSpace(path))
                         {
                             break;
@@ -591,7 +591,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
     private static Dictionary<string, PropertyInfo> GetConfigProps(out IList<PropertyInfo> configs)
     {
         System.Console.WriteLine("Retrieving possible config options...");
-        
+
         var configurables = typeof(T).GetInterfaces()
             .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IConfigurable<>))
             .Select(x => x.GetGenericArguments()[0])

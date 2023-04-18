@@ -1,11 +1,11 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace GbxToolAPI.Console;
+namespace GbxToolAPI.CLI;
 
 static class ToolConstructorPicker
 {
     internal static IEnumerable<(T, object[])> CreateInstances<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(Dictionary<Type, ICollection<object>> inputByType, bool singleOutput) where T : class, ITool
-    {        
+    {
         foreach (var ctor in typeof(T).GetConstructors())
         {
             var ctorParams = ctor.GetParameters();
@@ -18,7 +18,7 @@ static class ToolConstructorPicker
             for (int i = 0; i < ctorParams.Length; i++)
             {
                 var param = ctorParams[i];
-                
+
                 if (singleOutput && param.ParameterType.IsGenericType && param.ParameterType.GetGenericTypeDefinition() == typeof(IEnumerable<>))
                 {
                     var elementType = param.ParameterType.GetGenericArguments()[0];
@@ -38,7 +38,7 @@ static class ToolConstructorPicker
                         continue;
                     }
                 }
-                
+
                 if (!inputByType.TryGetValue(param.ParameterType, out var inputList))
                 {
                     invalidCtor = true;

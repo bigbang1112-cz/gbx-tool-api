@@ -1,4 +1,4 @@
-﻿namespace GbxToolAPI.Console;
+﻿namespace GbxToolAPI.CLI;
 
 internal static class Constants
 {

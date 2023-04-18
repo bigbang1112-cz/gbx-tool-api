@@ -1,4 +1,4 @@
-﻿namespace GbxToolAPI.Console;
+﻿namespace GbxToolAPI.CLI;
 
 [Serializable]
 public class ConsoleFailException : Exception

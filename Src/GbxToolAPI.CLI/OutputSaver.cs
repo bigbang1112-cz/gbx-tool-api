@@ -1,7 +1,7 @@
 ﻿using GBX.NET;
 using System.Diagnostics;
 
-namespace GbxToolAPI.Console;
+namespace GbxToolAPI.CLI;
 
 internal class OutputSaver
 {
