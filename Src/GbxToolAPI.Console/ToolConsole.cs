@@ -6,7 +6,7 @@ using System.Text;
 
 namespace GbxToolAPI.Console;
 
-public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.Interfaces)] T> where T : class, ITool
+public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.Interfaces | DynamicallyAccessedMemberTypes.PublicProperties)] T> where T : class, ITool
 {
     private static readonly string rootPath;
 
@@ -606,11 +606,23 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
             }
         }
 
+        if (configs.Count == 0)
+        {
+            System.Console.WriteLine("No config used by this tool.");
+        }
+
         var configProps = new Dictionary<string, PropertyInfo>();
 
         foreach (var propConfig in configs)
         {
-            foreach (var prop in propConfig.PropertyType.GetProperties())
+            var configPropArray = propConfig.PropertyType.GetProperties();
+
+            if (configPropArray.Length == 0)
+            {
+                System.Console.WriteLine("No config properties found.");
+            }
+
+            foreach (var prop in configPropArray)
             {
                 var nameLower = prop.Name.ToLowerInvariant();
 
