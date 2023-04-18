@@ -78,7 +78,7 @@ internal class OutputSaver
             fileName = GenerateNodeFileName(node);
         }
 
-        System.Console.WriteLine($"Saving as {fileName}...");
+        Console.WriteLine($"Saving as {fileName}...");
         
         var watch = Stopwatch.StartNew();
 
@@ -92,7 +92,7 @@ internal class OutputSaver
 
         node.Save(savePath); // temporary discard of the path info
 
-        System.Console.WriteLine($"Saved. ({watch.Elapsed.TotalMilliseconds}ms)");
+        Console.WriteLine($"Saved. ({watch.Elapsed.TotalMilliseconds}ms)");
     }
 
     private static string GenerateNodeFileName(Node node)

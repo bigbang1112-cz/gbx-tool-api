@@ -20,19 +20,19 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
         }
         catch (ConsoleFailException ex)
         {
-            System.Console.ForegroundColor = ConsoleColor.Red;
-            System.Console.WriteLine(ex.Message);
-            System.Console.ResetColor();
-            System.Console.Write("Press any key to continue...");
-            System.Console.ReadKey();
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(ex.Message);
+            Console.ResetColor();
+            Console.Write("Press any key to continue...");
+            Console.ReadKey();
         }
         catch (Exception ex)
         {
-            System.Console.ForegroundColor = ConsoleColor.Red;
-            System.Console.WriteLine(ex);
-            System.Console.ResetColor();
-            System.Console.Write("Press any key to continue...");
-            System.Console.ReadKey();
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(ex);
+            Console.ResetColor();
+            Console.Write("Press any key to continue...");
+            Console.ReadKey();
         }
 
         return c;
@@ -47,7 +47,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 
     private static async Task<ToolConsole<T>> RunCanThrowAsync(string[] args)
     {
-        System.Console.WriteLine("Initializing the console...");
+        Console.WriteLine("Initializing the console...");
 
         var type = typeof(T);
 
@@ -62,18 +62,18 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 
         var console = new ToolConsole<T>();
 
-        System.Console.WriteLine("Using the tool: " + type.GetCustomAttribute<ToolNameAttribute>()?.Name);
+        Console.WriteLine("Using the tool: " + type.GetCustomAttribute<ToolNameAttribute>()?.Name);
 
         var configProps = GetConfigProps(out var configPropTypes);
 
-        System.Console.WriteLine("Scanning all the command line arguments...");
+        Console.WriteLine("Scanning all the command line arguments...");
 
         var inputFiles = args.TakeWhile(arg => !arg.StartsWith('-')).ToArray();
 
         if (inputFiles.Length > 0)
         {
-            System.Console.WriteLine();
-            System.Console.WriteLine("Detected input files:\n- " + string.Join("\n- ", inputFiles.Select(Path.GetFileName)));
+            Console.WriteLine();
+            Console.WriteLine("Detected input files:\n- " + string.Join("\n- ", inputFiles.Select(Path.GetFileName)));
         }
 
         var remainingArgs = args.Skip(inputFiles.Length);
@@ -81,7 +81,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
         var consoleOptions = GetConsoleOptions(remainingArgs, configProps, out var configPropsToSet);
         var configInstances = GetConfigInstances(configPropTypes, consoleOptions);
 
-        System.Console.WriteLine();
+        Console.WriteLine();
 
         var inputByType = CreateInputDictionaryFromFiles(inputFiles);
         var userDataPathDict = new Dictionary<string, string>();
@@ -104,10 +104,10 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 
             await RunToolInstanceAsync(toolInstance, configInstances, configPropsToSet, finalPath);
 
-            System.Console.WriteLine();
+            Console.WriteLine();
         }
 
-        System.Console.WriteLine("Complete!");
+        Console.WriteLine("Complete!");
 
         return console;
     }
@@ -141,7 +141,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
                 continue;
             }
 
-            System.Console.WriteLine("Parsing " + Path.GetFileName(file) + "...");
+            Console.WriteLine("Parsing " + Path.GetFileName(file) + "...");
 
             Node? node;
 
@@ -151,14 +151,14 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
             }
             catch (Exception ex)
             {
-                System.Console.WriteLine(ex);
+                Console.WriteLine(ex);
                 continue;
             }
 
             yield return node is null ? new BinFile(File.ReadAllBytes(file)) : node;
         }
 
-        System.Console.WriteLine();
+        Console.WriteLine();
     }
 
     private static bool IsTextFile(string filePath)
@@ -231,7 +231,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 
     private static async Task RunToolInstanceAsync(T toolInstance, Dictionary<PropertyInfo, Config> configInstances, Dictionary<PropertyInfo, object?> configPropsToSet, string outputDir)
     {
-        System.Console.WriteLine("Running tool instance...");
+        Console.WriteLine("Running tool instance...");
 
         foreach (var (configProp, config) in configInstances)
         {
@@ -259,7 +259,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
         {
             var typeName = GetTypeName(produceMethod.ReturnType);
 
-            System.Console.WriteLine($"Producing {typeName}...");
+            Console.WriteLine($"Producing {typeName}...");
 
             var watch = Stopwatch.StartNew();
 
@@ -267,7 +267,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 
             var name = output is null ? "[null]" : GetTypeName(output.GetType());
 
-            System.Console.WriteLine($"Produced {name}. ({watch.Elapsed.TotalMilliseconds}ms)");
+            Console.WriteLine($"Produced {name}. ({watch.Elapsed.TotalMilliseconds}ms)");
 
             if (output is null)
             {
@@ -320,7 +320,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 
     private static ConsoleOptions GetConsoleOptions(IEnumerable<string> args, Dictionary<string, PropertyInfo> configProps, out Dictionary<PropertyInfo, object?> configPropsToSet)
     {
-        System.Console.WriteLine();
+        Console.WriteLine();
 
         var consoleOptionsPath = Path.Combine(rootPath, "ConsoleOptions.yml");
 
@@ -330,14 +330,14 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 
         if (File.Exists(consoleOptionsPath))
         {
-            System.Console.WriteLine("Using existing ConsoleOptions.yml...");
+            Console.WriteLine("Using existing ConsoleOptions.yml...");
 
             using var r = new StreamReader(consoleOptionsPath);
             options = Yml.Deserializer.Deserialize<ConsoleOptions>(r)!;
         }
         else
         {
-            System.Console.WriteLine("Creating new ConsoleOptions.yml...");
+            Console.WriteLine("Creating new ConsoleOptions.yml...");
             options = new ConsoleOptions();
 
             var games = new Dictionary<string, Action<ConsoleOptions, string?>>
@@ -352,9 +352,9 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
             {
                 while (true)
                 {
-                    System.Console.Write($"Enter your {game} installation path (leave empty if not installed or interested): ");
+                    Console.Write($"Enter your {game} installation path (leave empty if not installed or interested): ");
 
-                    var path = System.Console.ReadLine();
+                    var path = Console.ReadLine();
 
                     if (string.IsNullOrWhiteSpace(path))
                     {
@@ -363,7 +363,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 
                     if (!Directory.Exists(path))
                     {
-                        System.Console.WriteLine("Directory does not exist.");
+                        Console.WriteLine("Directory does not exist.");
                         continue;
                     }
 
@@ -378,7 +378,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 
                     if (!File.Exists(Path.Combine(path, gameExeMapping)))
                     {
-                        System.Console.WriteLine("Correct game executable not found in this directory.");
+                        Console.WriteLine("Correct game executable not found in this directory.");
                         continue;
                     }
 
@@ -397,8 +397,8 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 
         configPropsToSet = new Dictionary<PropertyInfo, object?>();
 
-        System.Console.WriteLine();
-        System.Console.WriteLine("Additional arguments:");
+        Console.WriteLine();
+        Console.WriteLine("Additional arguments:");
 
         var argEnumerator = args.GetEnumerator();
 
@@ -411,7 +411,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
             {
                 case "-singleoutput": // Merge will produce only one instance of Tool
                     options.SingleOutput = true;
-                    System.Console.WriteLine($": {arg}");
+                    Console.WriteLine($": {arg}");
                     continue;
                 case "-config":
                     if (!argEnumerator.MoveNext())
@@ -420,7 +420,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
                     }
 
                     options.CustomConfig = argEnumerator.Current;
-                    System.Console.WriteLine($": {arg} \"{options.CustomConfig}\"");
+                    Console.WriteLine($": {arg} \"{options.CustomConfig}\"");
                     continue;
                 case "-o":
                 case "-output":
@@ -437,7 +437,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
                     }
 
                     options.OutputDir = outputDir;
-                    System.Console.WriteLine($": {arg} \"{outputDir}\"");
+                    Console.WriteLine($": {arg} \"{outputDir}\"");
                     continue;
                 case "-updateassets":
 
@@ -460,7 +460,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 
                         if (!Directory.Exists(path))
                         {
-                            System.Console.WriteLine("Directory does not exist.");
+                            Console.WriteLine("Directory does not exist.");
                             continue;
                         }
 
@@ -475,7 +475,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 
                         if (!File.Exists(Path.Combine(path, gameExeMapping)))
                         {
-                            System.Console.WriteLine("Correct game executable not found in this directory.");
+                            Console.WriteLine("Correct game executable not found in this directory.");
                             continue;
                         }
 
@@ -484,7 +484,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
                         break;
                     }
 
-                    System.Console.WriteLine($": {arg} {(updatedAssets ? "(already updated)" : "")}");
+                    Console.WriteLine($": {arg} {(updatedAssets ? "(already updated)" : "")}");
                     continue;
             }
 
@@ -502,7 +502,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 
                 var val = argEnumerator.Current;
 
-                System.Console.WriteLine($": {arg} \"{val}\"");
+                Console.WriteLine($": {arg} \"{val}\"");
 
                 configPropsToSet.Add(confProp, val);
             }
@@ -525,7 +525,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
         }
         catch (Exception ex)
         {
-            System.Console.WriteLine($"Failed to parse Nadeo.ini: {ex.Message}");
+            Console.WriteLine($"Failed to parse Nadeo.ini: {ex.Message}");
             return;
         }
 
@@ -556,7 +556,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
             var updatedRelativePath = typeof(T).GetMethod(nameof(IHasAssets.RemapAssetRoute))?.Invoke(null, new object[] { relativeFilePath, isManiaPlanet }) as string ?? throw new Exception("Undefined file path");
             var finalPath = Path.Combine(nadeoIni.UserDataDir, updatedRelativePath);
 
-            System.Console.WriteLine($"Copying {relativeFilePath} to {updatedRelativePath}...");
+            Console.WriteLine($"Copying {relativeFilePath} to {updatedRelativePath}...");
 
             var finalDir = Path.GetDirectoryName(finalPath);
 
@@ -568,7 +568,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
             File.Copy(filePath, finalPath, true);
         }
 
-        System.Console.WriteLine("Copied!");
+        Console.WriteLine("Copied!");
     }
 
     private static string GetTypeName(Type type)
@@ -590,7 +590,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 
     private static Dictionary<string, PropertyInfo> GetConfigProps(out IList<PropertyInfo> configs)
     {
-        System.Console.WriteLine("Retrieving possible config options...");
+        Console.WriteLine("Retrieving possible config options...");
 
         var configurables = typeof(T).GetInterfaces()
             .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IConfigurable<>))
@@ -609,7 +609,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 
         if (configs.Count == 0)
         {
-            System.Console.WriteLine("No config used by this tool.");
+            Console.WriteLine("No config used by this tool.");
         }
 
         var configProps = new Dictionary<string, PropertyInfo>();
@@ -620,7 +620,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 
             if (configPropArray.Length == 0)
             {
-                System.Console.WriteLine("No config properties found.");
+                Console.WriteLine("No config properties found.");
             }
 
             foreach (var prop in configPropArray)
