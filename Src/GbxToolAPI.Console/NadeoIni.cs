@@ -2,7 +2,7 @@
 
 public class NadeoIni
 {
-    public string UserDataDir { get; init; }
+    public required string UserDataDir { get; init; }
 
     public static NadeoIni Parse(string nadeoIniFilePath)
     {

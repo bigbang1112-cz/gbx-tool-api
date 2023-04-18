@@ -1,11 +1,12 @@
 ﻿using GBX.NET;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text;
 
 namespace GbxToolAPI.Console;
 
-public class ToolConsole<T> where T : class, ITool
+public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] T> where T : class, ITool
 {
     private static readonly string rootPath;
 
