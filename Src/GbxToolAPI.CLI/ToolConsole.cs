@@ -113,6 +113,12 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 
         Console.WriteLine("Complete!");
 
+        if (!consoleOptions.NoPause)
+        {
+            Console.Write("Press any key to continue...");
+            Console.ReadKey();
+        }
+
         return console;
     }
 
@@ -387,34 +393,39 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
                         {
                             path = null;
                         }
-                        else
-                        {
-                            break;
-                        }
                     }
 
                     if (path is null)
                     {
-                        Console.Write($"Enter your {game.Name} installation path (leave empty if not installed or interested): ");
+                        Console.WriteLine($"Attempted to search for the following installation paths of {game.Name}:");
+
+                        foreach (var p in game.SuggestedInstallationPaths)
+                        {
+                            Console.WriteLine($"- {p}");
+                        }
+
+                        Console.WriteLine($"But it didn't find any existing one.");
+
+                        Console.Write($"Enter your {game.Name} installation path manually (leave empty if not installed or interested): ");
 
                         path = Console.ReadLine();
+                    }
 
-                        if (string.IsNullOrWhiteSpace(path))
-                        {
-                            break;
-                        }
+                    if (string.IsNullOrWhiteSpace(path))
+                    {
+                        break;
+                    }
 
-                        if (!Directory.Exists(path))
-                        {
-                            Console.WriteLine("Directory does not exist.");
-                            continue;
-                        }
+                    if (!Directory.Exists(path))
+                    {
+                        Console.WriteLine("Directory does not exist.");
+                        continue;
+                    }
 
-                        if (!File.Exists(Path.Combine(path, game.ExeName + ".exe")))
-                        {
-                            Console.WriteLine("Correct game executable not found in this directory.");
-                            continue;
-                        }
+                    if (!File.Exists(Path.Combine(path, game.ExeName + ".exe")))
+                    {
+                        Console.WriteLine("Correct game executable not found in this directory.");
+                        continue;
                     }
 
                     CopyAssets(path ?? throw new UnreachableException("Path is null but it shouldn't be"), game is not TrackmaniaForeverGameInstallation);
@@ -444,6 +455,10 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 
             switch (argLower)
             {
+                case "-nopause":
+                    options.NoPause = true;
+                    Console.WriteLine($": {arg}");
+                    break;
                 case "-singleoutput": // Merge will produce only one instance of Tool
                     options.SingleOutput = true;
                     Console.WriteLine($": {arg}");

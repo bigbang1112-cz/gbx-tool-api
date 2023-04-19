@@ -1,7 +1,8 @@
 ﻿namespace GbxToolAPI.CLI;
 
-internal class ConsoleOptions
+public class ConsoleOptions
 {
+    public bool NoPause { get; set; }
     public bool SingleOutput { get; set; }
     public string? CustomConfig { get; set; }
     public string? OutputDir { get; set; }

@@ -7,8 +7,10 @@ internal class TrackmaniaTurboGameInstallation : GameInstallation
 
     public override string[] SuggestedInstallationPaths { get; } = new[]
     {
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Ubisoft", "Ubisoft Game Launcher", "games", "TrackmaniaTurbo"),
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Ubisoft", "Ubisoft Game Launcher", "games", "TrackmaniaTurbo")
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Steam", "steamapps", "common", "TrackMania Turbo"),
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Steam", "steamapps", "common", "TrackMania Turbo"),
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Ubisoft", "Ubisoft Game Launcher", "games", "Trackmania Turbo"),
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Ubisoft", "Ubisoft Game Launcher", "games", "Trackmania Turbo")
     };
 
     public override string? GetPathFromOptions(ConsoleOptions options)
