@@ -1,13 +1,13 @@
-﻿using System.Data;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Text;
-using System.Xml.Linq;
 
 namespace GbxToolAPI;
 
 public static class AssetsManager<TTool> where TTool : ITool
 {
     private static Func<string, Task<byte[]>>? ExternalRetrieve { get; set; }
+
+    internal static bool RunsViaConsole { get; set; }
 
     public static async ValueTask<T> GetFromYmlAsync<T>(string path)
     {
@@ -20,10 +20,7 @@ public static class AssetsManager<TTool> where TTool : ITool
 
         var entryAss = Assembly.GetEntryAssembly();
 
-        var runsViaConsole = entryAss?.GetReferencedAssemblies()?
-            .Any(x => x.Name == "GbxToolAPI.Console") ?? false;
-
-        if (!runsViaConsole)
+        if (!RunsViaConsole)
         {
             if (ExternalRetrieve is null)
             {

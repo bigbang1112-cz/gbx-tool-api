@@ -13,5 +13,9 @@
 			<IsTrimmable>false</IsTrimmable>
 		</PackageReference>
 	</ItemGroup>
+	
+	<ItemGroup>
+		<InternalsVisibleTo Include="$(AssemblyName).CLI" />
+	</ItemGroup>
 
 </Project>

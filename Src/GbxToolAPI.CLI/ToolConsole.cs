@@ -50,6 +50,8 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
     {
         Console.WriteLine("Initializing the console...");
 
+        AssetsManager<T>.RunsViaConsole = true;
+
         var type = typeof(T);
 
         var outputInterfaces = type.GetInterfaces()
