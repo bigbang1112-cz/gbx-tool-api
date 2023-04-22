@@ -1,4 +1,5 @@
 ﻿using GBX.NET;
+using GbxToolAPI.CLI.GameInstallations;
 using System.Collections;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -49,6 +50,8 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
     private static async Task<ToolConsole<T>> RunCanThrowAsync(string[] args)
     {
         Console.WriteLine("Initializing the console...");
+
+        AssetsManager<T>.RunsViaConsole = true;
 
         var type = typeof(T);
 
@@ -109,6 +112,12 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
         }
 
         Console.WriteLine("Complete!");
+
+        if (!consoleOptions.NoPause)
+        {
+            Console.Write("Press any key to continue...");
+            Console.ReadKey();
+        }
 
         return console;
     }
@@ -355,21 +364,52 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
             Console.WriteLine("Creating new ConsoleOptions.yml...");
             options = new ConsoleOptions();
 
-            var games = new Dictionary<string, Action<ConsoleOptions, string?>>
+            var games = new List<GameInstallation>
             {
-                { Constants.TrackManiaForever, (o, x) => o.TrackmaniaForeverInstallationPath = x },
-                { Constants.ManiaPlanet, (o, x) => o.ManiaPlanetInstallationPath = x },
-                { Constants.TrackmaniaTurbo, (o, x) => o.TrackmaniaTurboInstallationPath = x },
-                { Constants.Trackmania2020, (o, x) => o.Trackmania2020InstallationPath = x },
+                new TrackmaniaForeverGameInstallation(),
+                new ManiaPlanetGameInstallation(),
+                new TrackmaniaTurboGameInstallation(),
+                new Trackmania2020GameInstallation()
             };
 
-            foreach (var (game, setting) in games)
+            foreach (var game in games)
             {
+                var path = game.SuggestedInstallationPaths.FirstOrDefault(Directory.Exists);
+
+                Console.WriteLine();
+
                 while (true)
                 {
-                    Console.Write($"Enter your {game} installation path (leave empty if not installed or interested): ");
+                    if (path is not null)
+                    {
+                        Console.WriteLine($"Found {game.Name} installation at '{path}'.");
+                        Console.Write("Agree [y/n]? ");
 
-                    var path = Console.ReadLine();
+                        var k = Console.ReadKey();
+
+                        Console.WriteLine();
+
+                        if (k.Key == ConsoleKey.N)
+                        {
+                            path = null;
+                        }
+                    }
+
+                    if (path is null)
+                    {
+                        Console.WriteLine($"Attempted to search for the following installation paths of {game.Name}:");
+
+                        foreach (var p in game.SuggestedInstallationPaths)
+                        {
+                            Console.WriteLine($"- {p}");
+                        }
+
+                        Console.WriteLine($"But it didn't find any existing one.");
+
+                        Console.Write($"Enter your {game.Name} installation path manually (leave empty if not installed or interested): ");
+
+                        path = Console.ReadLine();
+                    }
 
                     if (string.IsNullOrWhiteSpace(path))
                     {
@@ -382,24 +422,15 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
                         continue;
                     }
 
-                    var gameExeMapping = game switch
-                    {
-                        Constants.TrackManiaForever => "TmForever.exe",
-                        Constants.ManiaPlanet => "ManiaPlanet.exe",
-                        Constants.TrackmaniaTurbo => "TrackmaniaTurbo.exe",
-                        Constants.Trackmania2020 => "Trackmania.exe",
-                        _ => throw new Exception("Game is not supported")
-                    };
-
-                    if (!File.Exists(Path.Combine(path, gameExeMapping)))
+                    if (!File.Exists(Path.Combine(path, game.ExeName + ".exe")))
                     {
                         Console.WriteLine("Correct game executable not found in this directory.");
                         continue;
                     }
 
-                    CopyAssets(path, game is not Constants.TrackManiaForever);
+                    CopyAssets(path ?? throw new UnreachableException("Path is null but it shouldn't be"), game is not TrackmaniaForeverGameInstallation);
 
-                    setting(options, path);
+                    game.SetPathFromOptions(options, path);
 
                     break;
                 }
@@ -424,6 +455,10 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 
             switch (argLower)
             {
+                case "-nopause":
+                    options.NoPause = true;
+                    Console.WriteLine($": {arg}");
+                    break;
                 case "-singleoutput": // Merge will produce only one instance of Tool
                     options.SingleOutput = true;
                     Console.WriteLine($": {arg}");
@@ -455,18 +490,17 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
                     Console.WriteLine($": {arg} \"{outputDir}\"");
                     continue;
                 case "-updateassets":
-
-                    var gamesForAssets = new Dictionary<string, Func<ConsoleOptions, string?>>
+                    var gamesForAssets = new List<GameInstallation>
                     {
-                        { Constants.TrackManiaForever, o => o.TrackmaniaForeverInstallationPath },
-                        { Constants.ManiaPlanet, o => o.ManiaPlanetInstallationPath },
-                        { Constants.TrackmaniaTurbo, o => o.TrackmaniaTurboInstallationPath },
-                        { Constants.Trackmania2020, o => o.Trackmania2020InstallationPath },
+                        new TrackmaniaForeverGameInstallation(),
+                        new ManiaPlanetGameInstallation(),
+                        new TrackmaniaTurboGameInstallation(),
+                        new Trackmania2020GameInstallation()
                     };
 
-                    foreach (var (game, setting) in gamesForAssets)
+                    foreach (var game in gamesForAssets)
                     {
-                        var path = setting(options);
+                        var path = game.GetPathFromOptions(options);
 
                         if (string.IsNullOrWhiteSpace(path))
                         {
@@ -479,22 +513,13 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
                             continue;
                         }
 
-                        var gameExeMapping = game switch
-                        {
-                            Constants.TrackManiaForever => "TmForever.exe",
-                            Constants.ManiaPlanet => "ManiaPlanet.exe",
-                            Constants.TrackmaniaTurbo => "TrackmaniaTurbo.exe",
-                            Constants.Trackmania2020 => "Trackmania.exe",
-                            _ => throw new Exception("Game is not supported")
-                        };
-
-                        if (!File.Exists(Path.Combine(path, gameExeMapping)))
+                        if (!File.Exists(Path.Combine(path, game.ExeName + ".exe")))
                         {
                             Console.WriteLine("Correct game executable not found in this directory.");
                             continue;
                         }
 
-                        CopyAssets(path, game is not Constants.TrackManiaForever);
+                        CopyAssets(path, game is not TrackmaniaForeverGameInstallation);
 
                         break;
                     }

@@ -78,17 +78,18 @@ internal class OutputSaver
             fileName = GenerateNodeFileName(node);
         }
 
-        Console.WriteLine($"Saving as {fileName}...");
-        
-        var watch = Stopwatch.StartNew();
-
         var savePath = Path.Combine(outputPath, fileName);
         var saveDirPath = Path.GetDirectoryName(savePath);
+
+        Console.WriteLine($"Output path: {saveDirPath}");
+        Console.WriteLine($"Saving as {Path.GetFileName(fileName)}...");
 
         if (saveDirPath is not null)
         {
             Directory.CreateDirectory(saveDirPath);
         }
+
+        var watch = Stopwatch.StartNew();
 
         node.Save(savePath); // temporary discard of the path info
 
