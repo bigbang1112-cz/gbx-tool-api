@@ -43,9 +43,8 @@ else
 
     protected override void OnInitialized()
     {
-        timer = new Timer(TimerCallback, null, 0, 1500); // TimerCallback will be called every 1000 milliseconds (1 second)
+        timer = new Timer(TimerCallback, null, 0, 1500);
     }
-
 
     private void TimerCallback(object? state)
     {
