@@ -28,7 +28,7 @@
 
     </div>
     <div style="display:flex;gap: 8px;">
-        <button class="button-util" @onclick="SelectAll">Select all</button>
+        <button class="button-util" @onclick="SelectAll" disabled="@SingleSelection">Select all</button>
         <button class="button-util" @onclick="DeselectAll">Deselect all</button>
         <button class="button-util" style="flex: 1" disabled>Auto-@(Produces ? "produce" : "proceed")</button>
     </div>
@@ -71,6 +71,9 @@
     [EditorRequired]
     public EventCallback SelectionChanged { get; set; }
 
+    [Parameter]
+    public bool SingleSelection { get; set; }
+
     protected override void OnInitialized()
     {
         suggestedTypeNames = ImportTypes.SelectMany(x => x.Parameters)
@@ -91,6 +94,11 @@
         {
             foreach (var gbx in FilterGbxsBySuggestedTypes(e.NewItems.OfType<GbxModel>()))
             {
+                if (SingleSelection && GbxSelection.Count >= 1)
+                {
+                    GbxSelection.Clear();
+                }
+
                 GbxSelection.Add(gbx);
                 selectionChanged = true;
             }
@@ -146,6 +154,11 @@
         }
         else
         {
+            if (SingleSelection)
+            {
+                GbxSelection.Clear();
+            }
+            
             GbxSelection.Add(gbx);
         }
 
@@ -154,6 +167,11 @@
 
     private async Task SelectAll()
     {
+        if (SingleSelection)
+        {
+            return;
+        }
+
         foreach (var gbx in FilterGbxsBySuggestedTypes(GbxService.Gbxs))
         {
             GbxSelection.Add(gbx);
