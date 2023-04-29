@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Components;
 
 namespace GbxToolAPI.Client;
 
-public abstract class ToolComponentBase<T> : ComponentBase, IAsyncDisposable where T : class, ITool
+public abstract class ToolComponentBase : ComponentBase, IAsyncDisposable
 {
     [Inject]
     public required Blazored.LocalStorage.ISyncLocalStorageService SyncLocalStorage { get; set; }
