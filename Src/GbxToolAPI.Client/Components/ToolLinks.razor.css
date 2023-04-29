@@ -5,5 +5,5 @@
 
 .download {
     font-weight: bold;
-    border: 2px solid var(--button-blue-edge);
+    border: 2px dotted var(--button-blue-edge);
 }
