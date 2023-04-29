@@ -1,4 +1,4 @@
-﻿<div class="@(NoRectangle ? "" : "rectangle") links">
+﻿<div class="@(NoRectangle ? "" : "rectangle") links @Classes">
     @if (GitHubAttribute?.Repository is not null)
     {
         if (!GitHubAttribute.NoExe)
@@ -19,4 +19,7 @@
     
     [Parameter]
     public bool NoRectangle { get; set; }
+
+    [Parameter]
+    public string? Classes { get; set; }
 }
