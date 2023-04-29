@@ -1,0 +1,20 @@
+﻿<div class="rectangle links">
+    @if (GitHubAttribute?.Repository is not null)
+    {
+        if (!GitHubAttribute.NoExe)
+        {
+            <a href="https://github.com/@(GitHubAttribute.Repository)/releases" class="button" target="_blank">Download tool as executable</a>
+        }
+
+        <a href="https://github.com/@(GitHubAttribute.Repository)" class="button" target="_blank" style="flex: 1">
+            <img src="img/github.svg" style="width: 16px; margin-right: 5px" />
+            GitHub
+        </a>
+    }
+</div>
+
+@code {
+    [Parameter]
+    [EditorRequired]
+    public required ToolGitHubAttribute GitHubAttribute { get; set; }
+}
