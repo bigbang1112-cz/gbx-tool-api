@@ -47,6 +47,10 @@ public abstract class ToolComponentBase : ComponentBase, IAsyncDisposable
     [EditorRequired]
     public IEnumerable<UtilImportType> ImportTypes { get; set; } = Enumerable.Empty<UtilImportType>();
 
+    [Parameter]
+    [EditorRequired]
+    public string ProceedType { get; set; } = "selected";
+
     public ToolComponentBase()
     {
         
