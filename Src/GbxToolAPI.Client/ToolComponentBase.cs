@@ -43,7 +43,6 @@ public abstract class ToolComponentBase : ComponentBase, IAsyncDisposable
     public Dictionary<string, Config> Configs { get; set; } = new();
 
     [Parameter]
-    [EditorRequired]
     public HashSet<GbxModel> GbxSelection { get; set; } = new();
 
     [Parameter]
@@ -70,7 +69,7 @@ public abstract class ToolComponentBase : ComponentBase, IAsyncDisposable
             .TrimStart('?') // Remove the leading '?'
             .Split('&') // Split the query string into separate name-value pairs
             .Select(p => p.Split('=')) // Split each name-value pair into its name and value
-            .ToDictionary(p => Uri.UnescapeDataString(p[0]), p => Uri.UnescapeDataString(p[1]));
+            .ToDictionary(p => Uri.UnescapeDataString(p[0]).ToLowerInvariant(), p => Uri.UnescapeDataString(p[1]).ToLowerInvariant());
 
         return base.OnParametersSetAsync();
     }
