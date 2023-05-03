@@ -12,6 +12,9 @@ public abstract class ToolComponentBase : ComponentBase, IAsyncDisposable
     [Inject]
     public required Blazored.LocalStorage.ILocalStorageService LocalStorage { get; set; }
 
+    [Inject]
+    public required NavigationManager NavMgr { get; set; }
+
     [Parameter]
     [EditorRequired]
     public required string Route { get; set; }
@@ -53,11 +56,23 @@ public abstract class ToolComponentBase : ComponentBase, IAsyncDisposable
 
     [Parameter]
     [EditorRequired]
-    public Dictionary<string, object> QueryParameters { get; set; } = new();
+    public Dictionary<string, string> QueryParameters { get; set; } = new();
 
     public ToolComponentBase()
     {
         
+    }
+
+    protected override Task OnParametersSetAsync()
+    {
+        // Parse the query string into a dictionary
+        QueryParameters = new Uri(NavMgr.Uri).Query
+            .TrimStart('?') // Remove the leading '?'
+            .Split('&') // Split the query string into separate name-value pairs
+            .Select(p => p.Split('=')) // Split each name-value pair into its name and value
+            .ToDictionary(p => Uri.UnescapeDataString(p[0]), p => Uri.UnescapeDataString(p[1]));
+
+        return base.OnParametersSetAsync();
     }
 
     public void UpdateConfig()
