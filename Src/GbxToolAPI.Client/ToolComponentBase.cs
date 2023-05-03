@@ -37,7 +37,7 @@ public abstract class ToolComponentBase : ComponentBase, IAsyncDisposable
 
     [Parameter]
     [EditorRequired]
-    public required Dictionary<string, Config> Configs { get; set; } = new();
+    public Dictionary<string, Config> Configs { get; set; } = new();
 
     [Parameter]
     [EditorRequired]
@@ -50,6 +50,10 @@ public abstract class ToolComponentBase : ComponentBase, IAsyncDisposable
     [Parameter]
     [EditorRequired]
     public string ProceedType { get; set; } = "selected";
+
+    [Parameter]
+    [EditorRequired]
+    public Dictionary<string, object> QueryParameters { get; set; } = new();
 
     public ToolComponentBase()
     {
