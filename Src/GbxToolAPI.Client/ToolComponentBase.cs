@@ -64,12 +64,24 @@ public abstract class ToolComponentBase : ComponentBase, IAsyncDisposable
 
     protected override Task OnParametersSetAsync()
     {
-        // Parse the query string into a dictionary
-        QueryParameters = new Uri(NavMgr.Uri).Query
-            .TrimStart('?') // Remove the leading '?'
-            .Split('&') // Split the query string into separate name-value pairs
-            .Select(p => p.Split('=')) // Split each name-value pair into its name and value
-            .ToDictionary(p => Uri.UnescapeDataString(p[0]).ToLowerInvariant(), p => Uri.UnescapeDataString(p[1]).ToLowerInvariant());
+        QueryParameters = new Dictionary<string, string>();
+
+        var query = new Uri(NavMgr.Uri).Query.TrimStart('?');
+        var pairs = query.Split('&');
+
+        foreach (var pair in pairs)
+        {
+            var keyValue = pair.Split('=');
+
+            if (keyValue.Length == 0)
+            {
+                continue;
+            }
+
+            var key = Uri.UnescapeDataString(keyValue[0]).ToLowerInvariant();
+            var value = keyValue.Length >= 2 ? Uri.UnescapeDataString(keyValue[1]).ToLowerInvariant() : "";
+            QueryParameters[key] = value;
+        }
 
         return base.OnParametersSetAsync();
     }
