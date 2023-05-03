@@ -4,13 +4,16 @@ using Microsoft.AspNetCore.Components;
 
 namespace GbxToolAPI.Client;
 
-public abstract class ToolComponentBase<T> : ComponentBase, IAsyncDisposable where T : class, ITool
+public abstract class ToolComponentBase : ComponentBase, IAsyncDisposable
 {
     [Inject]
     public required Blazored.LocalStorage.ISyncLocalStorageService SyncLocalStorage { get; set; }
 
     [Inject]
     public required Blazored.LocalStorage.ILocalStorageService LocalStorage { get; set; }
+
+    [Inject]
+    public required NavigationManager NavMgr { get; set; }
 
     [Parameter]
     [EditorRequired]
@@ -37,19 +40,50 @@ public abstract class ToolComponentBase<T> : ComponentBase, IAsyncDisposable whe
 
     [Parameter]
     [EditorRequired]
-    public required Dictionary<string, Config> Configs { get; set; } = new();
+    public Dictionary<string, Config> Configs { get; set; } = new();
 
     [Parameter]
-    [EditorRequired]
     public HashSet<GbxModel> GbxSelection { get; set; } = new();
 
     [Parameter]
     [EditorRequired]
     public IEnumerable<UtilImportType> ImportTypes { get; set; } = Enumerable.Empty<UtilImportType>();
 
+    [Parameter]
+    [EditorRequired]
+    public string ProceedType { get; set; } = "selected";
+
+    [Parameter]
+    [EditorRequired]
+    public Dictionary<string, string> QueryParameters { get; set; } = new();
+
     public ToolComponentBase()
     {
         
+    }
+
+    protected override Task OnParametersSetAsync()
+    {
+        QueryParameters = new Dictionary<string, string>();
+
+        var query = new Uri(NavMgr.Uri).Query.TrimStart('?');
+        var pairs = query.Split('&');
+
+        foreach (var pair in pairs)
+        {
+            var keyValue = pair.Split('=');
+
+            if (keyValue.Length == 0)
+            {
+                continue;
+            }
+
+            var key = Uri.UnescapeDataString(keyValue[0]).ToLowerInvariant();
+            var value = keyValue.Length >= 2 ? Uri.UnescapeDataString(keyValue[1]).ToLowerInvariant() : "";
+            QueryParameters[key] = value;
+        }
+
+        return base.OnParametersSetAsync();
     }
 
     public void UpdateConfig()
