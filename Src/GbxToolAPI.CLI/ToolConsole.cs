@@ -3,6 +3,8 @@ using GbxToolAPI.CLI.GameInstallations;
 using System.Collections;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.Net.Http.Json;
 using System.Reflection;
 using System.Text;
 
@@ -22,17 +24,13 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
         }
         catch (ConsoleFailException ex)
         {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(ex.Message);
-            Console.ResetColor();
+            ConsoleWriteLineWithColor(ex.Message, ConsoleColor.Red);
             Console.Write("Press any key to continue...");
             Console.ReadKey();
         }
         catch (Exception ex)
         {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(ex);
-            Console.ResetColor();
+            ConsoleWriteLineWithColor(ex.ToString(), ConsoleColor.Red);
             Console.Write("Press any key to continue...");
             Console.ReadKey();
         }
@@ -83,6 +81,12 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
         var remainingArgs = args.Skip(inputFiles.Length);
 
         var consoleOptions = GetConsoleOptions(remainingArgs, configProps, out var configPropsToSet);
+
+        if (!await CheckForUpdatesAsync(type, consoleOptions.NoPause)) // if not continue
+        {
+            return console;
+        }
+
         var configInstances = GetConfigInstances(configPropTypes, consoleOptions);
 
         Console.WriteLine();
@@ -120,6 +124,108 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
         }
 
         return console;
+    }
+
+    private static async ValueTask<bool> CheckForUpdatesAsync(Type type, bool noPause)
+    {
+        if (type.GetCustomAttribute<ToolGitHubAttribute>() is not ToolGitHubAttribute githubAtt || githubAtt.NoExe)
+        {
+            return true;
+        }
+
+        if (CheckForUpdatesShouldBeSkipped())
+        {
+            return true;
+        }
+        
+        Console.WriteLine("Checking for updates...");
+        
+        using var http = new HttpClient();
+        http.DefaultRequestHeaders.UserAgent.ParseAdd($"GbxToolAPI.CLI ({githubAtt.Repository})");
+
+        using var response = await http.GetAsync($"https://api.github.com/repos/{githubAtt.Repository}/releases/latest");
+
+        if (!response.IsSuccessStatusCode || await response.Content.ReadFromJsonAsync<GitHubRelease>() is not GitHubRelease release)
+        {
+            ConsoleWriteLineWithColor("Could not retrieve releases.", ConsoleColor.Red);
+            return true;
+        }
+
+        var latestVersion = new Version(release.TagName.TrimStart('v'));
+        var installedVersion = type.Assembly.GetName().Version;
+
+        if (installedVersion >= latestVersion)
+        {
+            Console.WriteLine("No new update detected.");
+            return true;
+        }
+
+        Console.WriteLine();
+        ConsoleWriteLineWithColor($"New update {release.TagName} is now available!\nPlease update to take advantage of new features, bug fixes, and security updates.", ConsoleColor.Green);
+
+        if (noPause)
+        {
+            Console.WriteLine();
+            return true;
+        }
+
+        ConsoleWriteWithColor("Press U to open the release page", ConsoleColor.Yellow);
+        Console.Write(", or any other key to continue using current version...");
+        var pressedKey = Console.ReadKey();
+
+        if (pressedKey.Key == ConsoleKey.U)
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = $"https://github.com/{githubAtt.Repository}/releases/tag/{release.TagName}",
+                UseShellExecute = true
+            });
+
+            return false;
+        }
+
+        Console.WriteLine();
+
+        return true;
+    }
+
+    private static bool CheckForUpdatesShouldBeSkipped()
+    {
+        var lastCheckFilePath = Path.Combine(rootPath, "LastCheckForUpdates.txt");
+
+        if (File.Exists(lastCheckFilePath) && DateTimeOffset.TryParse(File.ReadAllText(lastCheckFilePath), CultureInfo.InvariantCulture, out var lastCheckDateTime))
+        {
+            if (DateTimeOffset.UtcNow - lastCheckDateTime > TimeSpan.FromHours(1))
+            {
+                File.WriteAllText(lastCheckFilePath, DateTimeOffset.UtcNow.ToString(CultureInfo.InvariantCulture));
+            }
+            else
+            {
+                return true;
+            }
+        }
+        else
+        {
+            File.WriteAllText(lastCheckFilePath, DateTimeOffset.UtcNow.ToString(CultureInfo.InvariantCulture));
+        }
+
+        return false;
+    }
+
+    private static void ConsoleWriteLineWithColor(string text, ConsoleColor color)
+    {
+        var curColor = Console.ForegroundColor;
+        Console.ForegroundColor = color;
+        Console.WriteLine(text);
+        Console.ForegroundColor = curColor;
+    }
+
+    private static void ConsoleWriteWithColor(string text, ConsoleColor color)
+    {
+        var curColor = Console.ForegroundColor;
+        Console.ForegroundColor = color;
+        Console.Write(text);
+        Console.ForegroundColor = curColor;
     }
 
     private static Dictionary<Type, ICollection<object>> CreateInputDictionaryFromFiles(string[] files)
@@ -444,12 +550,17 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
         configPropsToSet = new Dictionary<PropertyInfo, object?>();
 
         Console.WriteLine();
-        Console.WriteLine("Additional arguments:");
+        Console.Write("Additional arguments: ");
 
         var argEnumerator = args.GetEnumerator();
 
+        var anyAdditionalArguments = false;
+
         while (argEnumerator.MoveNext())
         {
+            anyAdditionalArguments = true;
+            Console.WriteLine();
+
             var arg = argEnumerator.Current;
             var argLower = arg.ToLowerInvariant();
 
@@ -550,6 +661,11 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
             {
                 throw new ConsoleFailException($"Config option {arg} is not a string.");
             }
+        }
+
+        if (!anyAdditionalArguments)
+        {
+            Console.WriteLine("(none)");
         }
 
         return options;
