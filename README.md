@@ -1,4 +1,4 @@
-# Gbx Tool API
+# Gbx Tool API (powered by [GBX.NET](https://github.com/BigBang1112/gbx-net))
 
 Gbx Tool API library integrates tools into Gbx Web Tools in both serverside and clientside ways.
 
