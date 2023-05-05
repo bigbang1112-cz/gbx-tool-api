@@ -4,7 +4,7 @@ Gbx Tool API library integrates tools into Gbx Web Tools in both serverside and 
 
 That way it is possible to make conventions that allow easier Gbx tool development, while also not completely rely on the Gbx Web Tools project.
 
-**It is important to note that Gbx Tool API can still introduce major breaking without notice due to its early development stage.**
+**It is important to note that Gbx Tool API can still introduce major breaking changes without notice due to its early development stage.**
 
 Features of this library set are split in this way:
 
