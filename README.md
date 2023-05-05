@@ -48,7 +48,7 @@ exact commands soon
 using GBX.NET.Engines.Game;
 using GbxToolAPI;
 
-namespace CombineClips;
+namespace [YourToolNamespace];
 
 [ToolName("[Your Tool Name]")]
 public class [YourToolName]Tool : ITool
@@ -71,7 +71,7 @@ public class [YourToolName]Tool : ITool
 using GBX.NET.Engines.Game;
 using GbxToolAPI;
 
-namespace CombineClips;
+namespace [YourToolNamespace];
 
 [ToolName("[Your Tool Name]")]
 public class [YourToolName]Tool : ITool, IHasOutput<CGameCtnMediaClip>
