@@ -90,3 +90,6 @@ public class [YourToolName]Tool : ITool, IHasOutput<CGameCtnMediaClip>
 }
 
 ```
+
+6. For example, add configuration of the tool via `IConfigurable<TConfig> where TConfig : Config`. You should create your own configuration class (standard name is `[YourToolName]Config`).
+
