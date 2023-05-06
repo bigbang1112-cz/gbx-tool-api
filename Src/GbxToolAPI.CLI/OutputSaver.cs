@@ -31,6 +31,10 @@ internal class OutputSaver
             case Node node: // have specific filename formats defined somewhere, perhaps in GbxToolAPI directly
                 node.Save(GenerateNodeFileName(node));
                 break;
+            case BinFile bin:
+                var fileName = string.IsNullOrWhiteSpace(bin.FileName) ? $"{Guid.NewGuid()}.dat" : bin.FileName;
+                File.WriteAllBytes(SetupSavePath(fileName), bin.Data);
+                break;
             default:
                 throw new Exception("Unknown output type");
         }
@@ -78,6 +82,17 @@ internal class OutputSaver
             fileName = GenerateNodeFileName(node);
         }
 
+        var savePath = SetupSavePath(fileName);
+
+        var watch = Stopwatch.StartNew();
+
+        node.Save(savePath); // temporary discard of the path info
+
+        Console.WriteLine($"Saved. ({watch.Elapsed.TotalMilliseconds}ms)");
+    }
+
+    private string SetupSavePath(string fileName)
+    {
         var savePath = Path.Combine(outputPath, fileName);
         var saveDirPath = Path.GetDirectoryName(savePath);
 
@@ -89,11 +104,7 @@ internal class OutputSaver
             Directory.CreateDirectory(saveDirPath);
         }
 
-        var watch = Stopwatch.StartNew();
-
-        node.Save(savePath); // temporary discard of the path info
-
-        Console.WriteLine($"Saved. ({watch.Elapsed.TotalMilliseconds}ms)");
+        return savePath;
     }
 
     private static string GenerateNodeFileName(Node node)
