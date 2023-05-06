@@ -145,7 +145,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 
         using var response = await http.GetAsync($"https://api.github.com/repos/{githubAtt.Repository}/releases/latest");
 
-        if (!response.IsSuccessStatusCode || await response.Content.ReadFromJsonAsync<GitHubRelease>() is not GitHubRelease release)
+        if (!response.IsSuccessStatusCode || await response.Content.ReadFromJsonAsync(GitHubReleaseJsonSerializerContext.Default.GitHubRelease) is not GitHubRelease release)
         {
             ConsoleWriteLineWithColor("Could not retrieve releases.", ConsoleColor.Red);
             return true;
