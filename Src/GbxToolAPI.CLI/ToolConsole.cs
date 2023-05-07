@@ -525,12 +525,14 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
                     if (!Directory.Exists(path))
                     {
                         Console.WriteLine("Directory does not exist.");
+                        path = null;
                         continue;
                     }
 
                     if (!File.Exists(Path.Combine(path, game.ExeName + ".exe")))
                     {
                         Console.WriteLine("Correct game executable not found in this directory.");
+                        path = null;
                         continue;
                     }
 
@@ -685,7 +687,13 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
             return;
         }
 
-        var assetsIdent = typeof(T).GetCustomAttribute<ToolAssetsAttribute>()?.Identifier ?? throw new Exception("Tool is missing ToolAssetsAttribute");
+        var assetsIdent = typeof(T).GetCustomAttribute<ToolAssetsAttribute>()?.Identifier;
+
+        if (assetsIdent is null)
+        {
+            return;
+        }
+
         var assetsDir = Path.Combine(rootPath, "Assets", "Tools", assetsIdent);
 
         var assetsIgnored = typeof(T).GetCustomAttributes<ToolAssetsIgnoreIngameAttribute>();
