@@ -4,13 +4,14 @@
 		<TargetFramework>net7.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<Version>1.0.3</Version>
+		<Version>1.0.4</Version>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<IsTrimmable>true</IsTrimmable>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="GBX.NET" Version="1.2.0" />
-		<PackageReference Include="GBX.NET.LZO" Version="1.0.2" />
+		<PackageReference Include="GBX.NET" Version="1.2.1" />
+		<PackageReference Include="GBX.NET.LZO" Version="1.0.3" />
 		<PackageReference Include="YamlDotNet" Version="13.1.0">
 			<IsTrimmable>false</IsTrimmable>
 		</PackageReference>
