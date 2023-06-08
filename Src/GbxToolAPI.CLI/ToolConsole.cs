@@ -677,6 +677,8 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
     {
         NadeoIni nadeoIni;
 
+        Console.WriteLine($"Loading Nadeo.ini...");
+
         try
         {
             nadeoIni = NadeoIni.Parse(Path.Combine(path, "Nadeo.ini"));
