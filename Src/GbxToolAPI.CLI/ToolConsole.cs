@@ -77,6 +77,10 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
             Console.WriteLine();
             Console.WriteLine("Detected input files:\n- " + string.Join("\n- ", inputFiles.Select(Path.GetFileName)));
         }
+        else
+        {
+            await Console.Out.WriteLineAsync("None found");
+        }
 
         var remainingArgs = args.Skip(inputFiles.Length);
 
@@ -432,11 +436,13 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 
             if (File.Exists(fileName))
             {
+                Console.WriteLine($"Loading config for {configType.Name}...");
                 using var r = new StreamReader(fileName);
                 config = (Config)Yml.Deserializer.Deserialize(r, configType)!;
             }
             else
             {
+                Console.WriteLine($"Creating config for {configType.Name}...");
                 config = (Config)Activator.CreateInstance(configType)!;
             }
 
