@@ -448,6 +448,8 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 
             File.WriteAllText(fileName, Yml.Serializer.Serialize(config));
 
+            Console.WriteLine($"Config for {configType.Name} saved in standard format.");
+
             configInstances.Add(configProp, config);
         }
 
