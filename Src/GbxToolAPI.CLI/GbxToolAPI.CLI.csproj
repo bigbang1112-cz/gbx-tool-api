@@ -4,12 +4,14 @@
 		<TargetFramework>net7.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<Version>1.0.3</Version>
+		<Version>1.0.4</Version>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\GbxToolAPI\GbxToolAPI.csproj" />
+		<ProjectReference Include="..\GbxToolAPI\GbxToolAPI.csproj">
+			<IsTrimmable>false</IsTrimmable>
+		</ProjectReference>
 	</ItemGroup>
 
 </Project>
