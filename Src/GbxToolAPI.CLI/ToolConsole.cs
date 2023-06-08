@@ -436,19 +436,19 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 
             if (File.Exists(fileName))
             {
-                Console.WriteLine($"Loading config for {configType.Name}...");
+                Console.WriteLine($"Loading config {Path.GetFileName(fileName)}...");
                 using var r = new StreamReader(fileName);
                 config = (Config)Yml.Deserializer.Deserialize(r, configType)!;
             }
             else
             {
-                Console.WriteLine($"Creating config for {configType.Name}...");
+                Console.WriteLine($"Creating config {Path.GetFileName(fileName)}...");
                 config = (Config)Activator.CreateInstance(configType)!;
             }
 
             File.WriteAllText(fileName, Yml.Serializer.Serialize(config));
 
-            Console.WriteLine($"Config for {configType.Name} saved in standard format.");
+            Console.WriteLine($"Config {Path.GetFileName(fileName)} saved in standard format.");
 
             configInstances.Add(configProp, config);
         }
