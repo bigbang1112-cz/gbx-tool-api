@@ -22,7 +22,15 @@ internal class OutputSaver
 
         if (outputType.IsGenericType)
         {
-            SaveGeneric();
+            if (output is System.Collections.IEnumerable enumerable)
+            {
+                SaveMultiple(enumerable);
+            }
+            else
+            {
+                SaveGeneric();
+            }
+
             return;
         }
         
@@ -89,6 +97,15 @@ internal class OutputSaver
         node.Save(savePath); // temporary discard of the path info
 
         Console.WriteLine($"Saved. ({watch.Elapsed.TotalMilliseconds}ms)");
+    }
+
+    private void SaveMultiple(System.Collections.IEnumerable items)
+    {
+        foreach (var item in items)
+        {
+            var itemOutputSaver = new OutputSaver(item, outputPath);
+            itemOutputSaver.Save();
+        }
     }
 
     private string SetupSavePath(string fileName)
