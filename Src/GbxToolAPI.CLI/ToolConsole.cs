@@ -753,9 +753,15 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
         }
         else
         {
-            if (type.GetGenericTypeDefinition() == typeof(NodeFile<>))
+            var genericType = type.GetGenericTypeDefinition();
+
+            if (genericType == typeof(NodeFile<>))
             {
                 return type.GetGenericArguments()[0].Name;
+            }
+            else if (genericType == typeof(IEnumerable<>))
+            {
+                return "multiple";
             }
         }
 

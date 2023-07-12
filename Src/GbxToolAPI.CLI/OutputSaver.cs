@@ -20,17 +20,15 @@ internal class OutputSaver
     {
         var outputType = output.GetType();
 
+        if (output is System.Collections.IEnumerable enumerable)
+        {
+            SaveMultiple(enumerable);
+            return;
+        }
+
         if (outputType.IsGenericType)
         {
-            if (output is System.Collections.IEnumerable enumerable)
-            {
-                SaveMultiple(enumerable);
-            }
-            else
-            {
-                SaveGeneric();
-            }
-
+            SaveGeneric();
             return;
         }
         
