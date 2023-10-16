@@ -397,19 +397,26 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 
             var watch = Stopwatch.StartNew();
 
-            var output = produceMethod.Invoke(toolInstance, null);
-
-            var name = output is null ? "[null]" : GetTypeName(output.GetType());
-
-            Console.WriteLine($"Produced {name}. ({watch.Elapsed.TotalMilliseconds}ms)");
-
-            if (output is null)
+            try
             {
-                continue;
-            }
+                var output = produceMethod.Invoke(toolInstance, null);
 
-            var outputSaver = new OutputSaver(output, outputDir);
-            outputSaver.Save();
+                var name = output is null ? "[null]" : GetTypeName(output.GetType());
+
+                Console.WriteLine($"Produced {name}. ({watch.Elapsed.TotalMilliseconds}ms)");
+
+                if (output is null)
+                {
+                    continue;
+                }
+
+                var outputSaver = new OutputSaver(output, outputDir);
+                outputSaver.Save();
+            }
+            catch (TargetInvocationException tie)
+            {
+                throw tie.InnerException ?? tie;
+            }
         }
     }
 
