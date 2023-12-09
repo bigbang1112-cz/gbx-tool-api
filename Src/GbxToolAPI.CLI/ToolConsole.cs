@@ -14,6 +14,8 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 {
     private static readonly string rootPath;
 
+    private static readonly HttpClient httpClient = new();
+
     public static async Task<ToolConsole<T>?> RunAsync(string[] args)
     {
         var c = default(ToolConsole<T>);
@@ -236,7 +238,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
     {
         var dict = new Dictionary<Type, ICollection<object>>();
 
-        foreach (var typeGroup in GetFileObjectInstances(files).GroupBy(obj => obj.GetType()))
+        foreach (var typeGroup in GetFileObjectInstancesAsync(files).ToBlockingEnumerable().GroupBy(obj => obj.GetType()))
         {
             var list = new List<object>();
 
@@ -251,15 +253,48 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
         return dict;
     }
 
-    private static IEnumerable<object> GetFileObjectInstances(string[] files)
+    private static async Task<Stream?> GetStreamFromFileOrUrlAsync(string fileNameOrUrl)
+    {
+        if (!fileNameOrUrl.StartsWith("http://") && !fileNameOrUrl.StartsWith("https://"))
+        {
+            return File.OpenRead(fileNameOrUrl);
+        }
+
+        Console.WriteLine("Downloading " + Path.GetFileName(fileNameOrUrl) + "...");
+
+        var response = await httpClient.GetAsync(fileNameOrUrl);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            Console.WriteLine("Failed to download " + Path.GetFileName(fileNameOrUrl) + ": " + response.StatusCode);
+            return null;
+        }
+
+        return await response.Content.ReadAsStreamAsync();
+    }
+
+    private static async IAsyncEnumerable<object> GetFileObjectInstancesAsync(string[] files)
     {
         foreach (var file in files)
         {
-            if (IsTextFile(file))
+            using var stream = await GetStreamFromFileOrUrlAsync(file);
+
+            if (stream is null)
             {
-                yield return new TextFile(File.ReadAllText(file));
                 continue;
             }
+
+            using var buffered = new BufferedStream(stream);
+
+            if (IsTextData(buffered))
+            {
+                buffered.Position = 0;
+                using var r = new StreamReader(buffered);
+                yield return new TextFile(await r.ReadToEndAsync());
+                continue;
+            }
+
+            buffered.Position = 0;
 
             Console.WriteLine("Parsing " + Path.GetFileName(file) + "...");
 
@@ -267,7 +302,7 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
 
             try
             {
-                node = GameBox.ParseNode(file);
+                node = GameBox.ParseNode(buffered);
             }
             catch (Exception ex)
             {
@@ -275,18 +310,26 @@ public class ToolConsole<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTy
                 continue;
             }
 
-            yield return node is null ? new BinFile(File.ReadAllBytes(file)) : node;
+            if (node is not null)
+            {
+                yield return node;
+                continue;
+            }
+
+            buffered.Position = 0;
+            using var ms = new MemoryStream();
+            await buffered.CopyToAsync(ms);
+            yield return new BinFile(ms.ToArray());
         }
 
         Console.WriteLine();
     }
 
-    private static bool IsTextFile(string filePath)
+    private static bool IsTextData(Stream stream)
     {
         try
         {
-            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-            using var r = new StreamReader(fs, Encoding.UTF8, true, 1024, true);
+            using var r = new StreamReader(stream, Encoding.UTF8, true, 1024, true);
 
             while (!r.EndOfStream)
             {
