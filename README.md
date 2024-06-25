@@ -1,5 +1,7 @@
 # Gbx Tool API (powered by [GBX.NET](https://github.com/BigBang1112/gbx-net))
 
+### This project will be transformed into [GBX.NET.Tool](https://github.com/BigBang1112/gbx-net/tree/master/Src/GBX.NET.Tool) with a fairly similar API.
+
 Gbx Tool API library integrates tools into Gbx Web Tools in both serverside and clientside ways.
 
 That way it is possible to make conventions that allow easier Gbx tool development, while also not completely rely on the Gbx Web Tools project.
